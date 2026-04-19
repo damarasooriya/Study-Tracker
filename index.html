@@ -458,10 +458,10 @@ textarea.form-inp{resize:vertical;min-height:80px;line-height:1.5}
       <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
           <span style="font-size:14px;font-weight:600">AL Study Tracker</span>
-          <span style="font-size:11px;color:var(--text3);background:var(--bg4);padding:2px 8px;border-radius:99px">v1.0</span>
+          <span style="font-size:11px;color:var(--text3);background:var(--bg4);padding:2px 8px;border-radius:99px">v1.4</span>
         </div>
-        <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px">Track your AL/OL subjects and lessons offline. Mark lessons as Not Studied, Needs Work, Working or Confident. All data stays on your device — no account, no internet needed.</div>
-        <div style="font-size:11px;color:var(--text3)">Made with ❤️ · Offline PWA · localStorage</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px">Track your subjects and lessons offline. No account needed.</div>
+        <div style="font-size:11px;color:var(--text3)">Made from D_amarasooriya with claude · Offline PWA</div>
       </div>
     </div>
     <button class="btn-secondary" onclick="closeMod('modal-settings')">Close</button>
@@ -1100,7 +1100,7 @@ self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r
 
 /* ── LIBRARY ── */
 // ↓ CHANGE THIS to your GitHub raw index URL after you set up the repo
-const LIBRARY_INDEX_URL = 'https://raw.githubusercontent.com/damarasooriya/studytrack-library/refs/heads/main/library/index.json';
+const LIBRARY_INDEX_URL = 'https://raw.githubusercontent.com/damarasooriya/studytrack-library/main/library/index.json';
 
 let libCache = null; // cache fetched library so we don't re-fetch on every open
 
