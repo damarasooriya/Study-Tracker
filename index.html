@@ -458,10 +458,10 @@ textarea.form-inp{resize:vertical;min-height:80px;line-height:1.5}
       <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
           <span style="font-size:14px;font-weight:600">AL Study Tracker</span>
-          <span style="font-size:11px;color:var(--text3);background:var(--bg4);padding:2px 8px;border-radius:99px">v1.4</span>
+          <span style="font-size:11px;color:var(--text3);background:var(--bg4);padding:2px 8px;border-radius:99px">v1.5</span>
         </div>
-        <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px">Track your subjects and lessons offline. No account needed.</div>
-        <div style="font-size:11px;color:var(--text3)">Made from D_amarasooriya with claude · Offline PWA</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px">Track your AL/OL subjects and lessons offline. Mark lessons as Not Studied, Needs Work, Working or Confident. All data stays on your device — no account, no internet needed.</div>
+        <div style="font-size:11px;color:var(--text3)">Made with ❤️ · Offline PWA · localStorage</div>
       </div>
     </div>
     <button class="btn-secondary" onclick="closeMod('modal-settings')">Close</button>
@@ -1100,7 +1100,7 @@ self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r
 
 /* ── LIBRARY ── */
 // ↓ CHANGE THIS to your GitHub raw index URL after you set up the repo
-const LIBRARY_INDEX_URL = 'https://raw.githubusercontent.com/damarasooriya/studytrack-library/main/library/index.json';
+const LIBRARY_INDEX_URL = 'https://cdn.jsdelivr.net/gh/damarasooriya/studytrack-library@main/library/index.json';
 
 let libCache = null; // cache fetched library so we don't re-fetch on every open
 
@@ -1137,15 +1137,16 @@ function renderLibrary(index){
     return;
   }
   const existingNames=new Set(db.subjects.map(s=>s.name.trim().toLowerCase()));
-  listEl.innerHTML=index.subjects.map(item=>{
+  listEl.innerHTML=index.subjects.map((item,idx)=>{
     const already=existingNames.has((item.name||'').trim().toLowerCase());
-    return`<div class="lib-card${already?' added':''}" id="libcard-${item.file}">
+    const fileId=item.file||idx;
+    return`<div class="lib-card${already?' added':''}" id="libcard-${idx}">
       <div class="lib-card-info">
         <div class="lib-name">${esc(item.emoji||'📚')} ${esc(item.name)}</div>
         <div class="lib-cnt">${item.lessonCount||'?'} lessons</div>
       </div>
       <button class="lib-add-btn${already?' done':''}"
-        onclick="addFromLibrary('${item.file}','libcard-${item.file}')"
+        onclick="addFromLibrary('${item.file||''}',${idx},'libcard-${idx}')"
         ${already?'disabled':''}>
         ${already?'Added':'+ Add'}
       </button>
@@ -1153,17 +1154,18 @@ function renderLibrary(index){
   }).join('');
 }
 
-async function addFromLibrary(file, cardId){
+async function addFromLibrary(file, idx, cardId){
   const btn=document.querySelector(`#${cardId} .lib-add-btn`);
   if(!btn||btn.disabled)return;
   btn.textContent='Adding...';btn.disabled=true;
   try{
-    // build the raw URL from the same base as the index
+    // use jsDelivr URL — no CORS issues
     const base=LIBRARY_INDEX_URL.replace('index.json','');
-    const res=await fetch(base+file+'?t='+Date.now());
+    const url=base+file+'?t='+Date.now();
+    const res=await fetch(url);
     if(!res.ok)throw new Error('HTTP '+res.status);
     const data=await res.json();
-    const subjects=data.subjects||[data]; // support single-subject or multi-subject files
+    const subjects=data.subjects||[data];
     let added=0,merged=0;
     subjects.forEach(impSubj=>{
       let existing=db.subjects.find(s=>s.id===impSubj.id)
@@ -1171,16 +1173,18 @@ async function addFromLibrary(file, cardId){
       if(!existing){db.subjects.push(impSubj);added++;}
       else{
         const names=new Set(existing.lessons.map(l=>l.name.trim().toLowerCase()));
-        (impSubj.lessons||[]).forEach(l=>{if(!names.has(l.name.trim().toLowerCase())){existing.lessons.push(l);merged++;}});
+        (impSubj.lessons||[]).forEach(l=>{
+          if(!names.has(l.name.trim().toLowerCase())){existing.lessons.push(l);merged++;}
+        });
       }
     });
     sv();renderDash();
     const card=document.getElementById(cardId);
-    if(card){card.classList.add('added');btn.textContent='Added';btn.classList.add('done');}
-    showToast(added?`"${subjects[0].name}" added to your subjects`:`${merged} new lessons merged`);
+    if(card){card.classList.add('added');btn.textContent='Added';btn.classList.add('done');btn.disabled=true;}
+    showToast(added?`"${subjects[0].name}" added`:`${merged} new lessons merged`);
   }catch(e){
     btn.textContent='+ Add';btn.disabled=false;
-    showToast('Failed to load subject. Check your connection.');
+    showToast('Failed to load. Check connection.');
   }
 }
 function openDownload(){
