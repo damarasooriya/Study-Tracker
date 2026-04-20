@@ -304,15 +304,11 @@ textarea.form-inp{resize:vertical;min-height:80px;line-height:1.5}
 .lib-loading{font-size:13px;color:var(--text3);text-align:center;padding:32px 0}
 .lib-error{font-size:13px;color:#e24b4a;text-align:center;padding:24px 0;line-height:1.6}
 
-/* DOWNLOAD CHECKLIST */
-.dl-item{display:flex;align-items:center;gap:12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;cursor:pointer;transition:border-color var(--tr)}
-.dl-item:hover{border-color:var(--border2)}
-.dl-item.checked{border-color:var(--accent-bd);background:var(--accent-dim)}
-.dl-check{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--border2);background:var(--bg4);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all var(--tr)}
-.dl-item.checked .dl-check{background:var(--accent);border-color:var(--accent)}
-.dl-info{flex:1;min-width:0}
-.dl-name{font-size:14px;font-weight:500}
-.dl-cnt{font-size:11px;color:var(--text3);margin-top:2px}
+/* FEEDBACK TAGS */
+.fb-tag{display:inline-block;padding:6px 14px;border-radius:99px;font-size:12px;font-weight:500;cursor:pointer;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);transition:all var(--tr)}
+.fb-tag:hover{border-color:var(--border2);color:var(--text)}
+.fb-tag.sel{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
+
 .empty-state{text-align:center;padding:48px 20px}
 .empty-state-icon{font-size:48px;margin-bottom:16px}
 .empty-state h3{font-size:18px;font-weight:600;margin-bottom:8px}
@@ -331,7 +327,7 @@ textarea.form-inp{resize:vertical;min-height:80px;line-height:1.5}
       <div id="hdr-right" style="display:flex;gap:8px;align-items:center">
         <button class="settings-btn" onclick="openDownload()">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Download
+          Subjects
         </button>
         <button class="settings-btn" onclick="openSettings()">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -458,9 +454,9 @@ textarea.form-inp{resize:vertical;min-height:80px;line-height:1.5}
       <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
           <span style="font-size:14px;font-weight:600">Study Tracker</span>
-          <span style="font-size:11px;color:var(--text3);background:var(--bg4);padding:2px 8px;border-radius:99px">v1.6</span>
+          <span style="font-size:11px;color:var(--text3);background:var(--bg4);padding:2px 8px;border-radius:99px">v1.8</span>
         </div>
-        <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px">Track your subjects and lessons. No login needed.</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px">Track your subjects and lessons. 😁 No login needed.</div>
         <div style="font-size:11px;color:var(--text3)">Made from D_amarasooriya with Claude</div>
       </div>
     </div>
@@ -468,41 +464,74 @@ textarea.form-inp{resize:vertical;min-height:80px;line-height:1.5}
   </div>
 </div>
 
-<!-- DOWNLOAD MODAL -->
+<!-- SUBJECTS & FEEDBACK MODAL -->
 <div class="modal-overlay" id="modal-download">
   <div class="modal" style="padding-bottom:28px">
     <div class="modal-handle"></div>
-    <div class="modal-ttl" style="margin-bottom:12px">Subjects</div>
+    <div class="modal-ttl" style="margin-bottom:12px">Subjects & Feedback </div>
 
     <!-- TABS -->
     <div class="dl-tabs">
-      <button class="dl-tab active" id="dltab-mine" onclick="switchDlTab('mine')">My Downloads</button>
-      <button class="dl-tab" id="dltab-lib" onclick="switchDlTab('lib')">Library</button>
-    </div>
-
-    <!-- MY DOWNLOADS PANEL -->
-    <div id="dl-panel-mine">
-      <div style="font-size:13px;color:var(--text2);margin-bottom:12px">Select subjects to download as a combined .json file.</div>
-      <div id="dl-subject-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
-      <div style="display:flex;gap:8px;margin-bottom:14px">
-        <button class="btn-secondary" style="margin:0;flex:1;padding:8px;font-size:12px" onclick="dlSelectAll(true)">Select All</button>
-        <button class="btn-secondary" style="margin:0;flex:1;padding:8px;font-size:12px" onclick="dlSelectAll(false)">Deselect All</button>
-      </div>
-      <button class="btn-primary" onclick="doDownloadSelected()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Download Selected
-      </button>
-      <button class="btn-secondary" onclick="closeMod('modal-download')">Cancel</button>
+      <button class="dl-tab active" id="dltab-lib"    onclick="switchDlTab('lib')">Library</button>
+      <button class="dl-tab"        id="dltab-upload" onclick="switchDlTab('upload')">Upload</button>
+      <button class="dl-tab"        id="dltab-fb"     onclick="switchDlTab('fb')">Feedback</button>
     </div>
 
     <!-- LIBRARY PANEL -->
-    <div id="dl-panel-lib" style="display:none">
+    <div id="dl-panel-lib">
       <div style="font-size:13px;color:var(--text2);margin-bottom:14px">Tap a subject to add it to your app instantly.</div>
       <div id="lib-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
         <div class="lib-loading">Loading library...</div>
       </div>
       <button class="btn-secondary" onclick="closeMod('modal-download')">Close</button>
     </div>
+
+    <!-- UPLOAD PANEL -->
+    <div id="dl-panel-upload" style="display:none">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">
+        Submit your subject to be reviewed and added to the public library. After my approval it will appear for all users.
+      </div>
+      <div class="form-field">
+        <label class="form-lbl">Your Name <span>(optional)</span></label>
+        <input type="text" class="form-inp" id="ul-name" placeholder="e.g. Kasun">
+      </div>
+      <div class="form-field">
+        <label class="form-lbl">Select Subject</label>
+        <select class="form-inp" id="ul-subject-select"></select>
+      </div>
+      <div class="form-field">
+        <label class="form-lbl">Message <span>(optional)</span></label>
+        <textarea class="form-inp" id="ul-message" placeholder="Any notes about this subject..." style="min-height:70px"></textarea>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:14px;line-height:1.6">Only lesson names and structure are shared — no personal data.</div>
+      <button class="btn-primary" onclick="submitUpload()">Submit for Review</button>
+      <button class="btn-secondary" onclick="closeMod('modal-download')">Cancel</button>
+    </div>
+
+    <!-- FEEDBACK PANEL -->
+    <div id="dl-panel-fb" style="display:none">
+      <div class="form-field">
+        <label class="form-lbl">Type</label>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px">
+          <span class="fb-tag sel" onclick="fbTagClick(this)">Bug Report</span>
+          <span class="fb-tag"    onclick="fbTagClick(this)">Suggestion</span>
+          <span class="fb-tag"    onclick="fbTagClick(this)">Question</span>
+          <span class="fb-tag"    onclick="fbTagClick(this)">Other</span>
+        </div>
+      </div>
+      <div class="form-field">
+        <label class="form-lbl">Your Message</label>
+        <textarea class="form-inp" id="fb-message" placeholder="Describe your feedback..." style="min-height:100px"></textarea>
+      </div>
+      <div class="form-field">
+        <label class="form-lbl">Your Name <span>(optional)</span></label>
+        <input type="text" class="form-inp" id="fb-name" placeholder="Anonymous">
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:14px;line-height:1.5">Feedback goes directly to the developer. No personal data is collected.</div>
+      <button class="btn-primary" onclick="submitFeedback()">Send Feedback</button>
+      <button class="btn-secondary" onclick="closeMod('modal-download')">Cancel</button>
+    </div>
+
   </div>
 </div>
 
@@ -1105,16 +1134,104 @@ self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r
 
 /* ── LIBRARY ── */
 // ↓ CHANGE THIS to your GitHub raw index URL after you set up the repo
-const LIBRARY_INDEX_URL = 'https://cdn.jsdelivr.net/gh/damarasooriya/studytrack-library@main/library/index.json';
+const LIBRARY_INDEX_URL = 'https://cdn.jsdelivr.net/gh/Damarasooriya/studytrack-library@main/library/index.json';
 
 let libCache = null; // cache fetched library so we don't re-fetch on every open
 
 function switchDlTab(tab){
-  document.getElementById('dltab-mine').classList.toggle('active', tab==='mine');
-  document.getElementById('dltab-lib').classList.toggle('active', tab==='lib');
-  document.getElementById('dl-panel-mine').style.display = tab==='mine'?'block':'none';
-  document.getElementById('dl-panel-lib').style.display = tab==='lib'?'block':'none';
-  if(tab==='lib') fetchLibrary();
+  ['lib','upload','fb'].forEach(t=>{
+    document.getElementById('dltab-'+t).classList.toggle('active',tab===t);
+    document.getElementById('dl-panel-'+t).style.display=tab===t?'block':'none';
+  });
+  if(tab==='lib')fetchLibrary();
+  if(tab==='upload')populateUploadSelect();
+}
+
+function openDownload(){
+  switchDlTab('lib');
+  openMod('modal-download');
+}
+
+/* ── UPLOAD PANEL ── */
+// ↓ Replace with your Google Form submission URL (change /viewform to /formResponse)
+const UPLOAD_FORM_URL='https://docs.google.com/forms/d/e/1FAIpQLSeHhEIbO89X9J0FgZa0mxryJn0xMEjzqjKJs19u2oN5PLpPqw/formResponse';
+const UL_FIELD_NAME   ='entry.16006554'; // ↓ Replace with your field entry IDs
+const UL_FIELD_SUBJECT='entry.372782553';
+const UL_FIELD_DATA   ='entry.509012555';
+const UL_FIELD_MSG    ='entry.1742862632';
+
+function populateUploadSelect(){
+  const sel=document.getElementById('ul-subject-select');
+  if(!db.subjects.length){
+    sel.innerHTML='<option>No subjects yet</option>';
+    return;
+  }
+  sel.innerHTML=db.subjects.map(s=>`<option value="${s.id}">${esc(s.emoji||'📚')} ${esc(s.name)}</option>`).join('');
+}
+
+async function submitUpload(){
+  const subjId=document.getElementById('ul-subject-select').value;
+  const name=(document.getElementById('ul-name').value||'').trim()||'Anonymous';
+  const msg=(document.getElementById('ul-message').value||'').trim();
+  const subj=db.subjects.find(s=>s.id===subjId);
+  if(!subj){showToast('Select a subject.');return;}
+  if(UPLOAD_FORM_URL.includes('YOUR_UPLOAD_FORM_ID')){
+    showToast('Upload form not set up yet — see instructions.');
+    return;
+  }
+  const payload={version:2,exported:new Date().toISOString(),subjects:[subj]};
+  try{
+    const body=new URLSearchParams();
+    body.append(UL_FIELD_NAME,name);
+    body.append(UL_FIELD_SUBJECT,subj.name);
+    body.append(UL_FIELD_DATA,JSON.stringify(payload));
+    body.append(UL_FIELD_MSG,msg);
+    await fetch(UPLOAD_FORM_URL,{method:'POST',mode:'no-cors',body});
+  }catch(e){}
+  document.getElementById('ul-name').value='';
+  document.getElementById('ul-message').value='';
+  closeMod('modal-download');
+  showToast('"'+subj.name+'" submitted for review!');
+}
+
+/* ── FEEDBACK PANEL ── */
+// ↓ Replace with your Google Form submission URL (change /viewform to /formResponse)
+const FEEDBACK_FORM_URL='https://docs.google.com/forms/d/e/1FAIpQLScRYvTrkpcyljBmcMdngLMTzlpfo3oEapPzD-qFMeVFc-5GxA/formResponse';
+const FB_FIELD_TYPE   ='entry.1002683208'; // ↓ Replace with your field entry IDs
+const FB_FIELD_MESSAGE='entry.1666369485';
+const FB_FIELD_NAME   ='entry.1275245789';
+
+let fbSelectedTag='Bug Report';
+function fbTagClick(el){
+  document.querySelectorAll('.fb-tag').forEach(t=>t.classList.remove('sel'));
+  el.classList.add('sel');
+  fbSelectedTag=el.textContent.trim();
+}
+
+async function submitFeedback(){
+  const msg=(document.getElementById('fb-message').value||'').trim();
+  const name=(document.getElementById('fb-name').value||'').trim()||'Anonymous';
+  if(!msg){
+    document.getElementById('fb-message').style.borderColor='#e24b4a';
+    setTimeout(()=>document.getElementById('fb-message').style.borderColor='',800);
+    document.getElementById('fb-message').focus();
+    return;
+  }
+  if(FEEDBACK_FORM_URL.includes('YOUR_FEEDBACK_FORM_ID')){
+    showToast('Feedback form not set up yet — see instructions.');
+    return;
+  }
+  try{
+    const body=new URLSearchParams();
+    body.append(FB_FIELD_TYPE,fbSelectedTag);
+    body.append(FB_FIELD_MESSAGE,msg);
+    body.append(FB_FIELD_NAME,name);
+    await fetch(FEEDBACK_FORM_URL,{method:'POST',mode:'no-cors',body});
+  }catch(e){}
+  document.getElementById('fb-message').value='';
+  document.getElementById('fb-name').value='';
+  closeMod('modal-download');
+  showToast('Feedback sent. Thank you!');
 }
 
 async function fetchLibrary(){
@@ -1191,58 +1308,6 @@ async function addFromLibrary(file, idx, cardId){
     btn.textContent='+ Add';btn.disabled=false;
     showToast('Failed to load. Check connection.');
   }
-}
-function openDownload(){
-  switchDlTab('mine');
-  const list=document.getElementById('dl-subject-list');
-  if(!db.subjects.length){
-    list.innerHTML='<div style="font-size:13px;color:var(--text3);text-align:center;padding:24px 0">No subjects yet.</div>';
-  } else {
-    list.innerHTML=db.subjects.map(s=>{
-      const tot=s.lessons.length;
-      return`<div class="dl-item checked" id="dl-${s.id}" onclick="dlToggle('${s.id}')">
-        <div class="dl-check" id="dlc-${s.id}">
-          <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><polyline points="1,6 4.5,9.5 11,2.5" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-        <div class="dl-info">
-          <div class="dl-name">${esc(s.emoji||'📚')} ${esc(s.name)}</div>
-          <div class="dl-cnt">${tot} lesson${tot!==1?'s':''}</div>
-        </div>
-      </div>`;
-    }).join('');
-  }
-  openMod('modal-download');
-}
-
-function dlToggle(id){
-  const item=document.getElementById('dl-'+id);
-  item.classList.toggle('checked');
-}
-
-function dlSelectAll(val){
-  db.subjects.forEach(s=>{
-    const item=document.getElementById('dl-'+s.id);
-    if(item){if(val)item.classList.add('checked');else item.classList.remove('checked');}
-  });
-}
-
-function doDownloadSelected(){
-  const selected=db.subjects.filter(s=>{
-    const el=document.getElementById('dl-'+s.id);
-    return el&&el.classList.contains('checked');
-  });
-  if(!selected.length){showToast('Select at least one subject.');return;}
-  const payload={version:2,exported:new Date().toISOString(),subjects:selected};
-  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;
-  const names=selected.length===1
-    ?selected[0].name.replace(/[^a-z0-9]/gi,'_').toLowerCase()
-    :'subjects-'+selected.length;
-  a.download='studytrack-'+names+'-'+new Date().toISOString().slice(0,10)+'.json';
-  a.click();URL.revokeObjectURL(url);
-  closeMod('modal-download');
-  showToast(selected.length+' subject'+(selected.length!==1?'s':'')+' downloaded.');
 }
 
 /* ── INIT ── */
