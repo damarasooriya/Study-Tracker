@@ -456,7 +456,7 @@ textarea.form-inp{resize:vertical;min-height:80px;line-height:1.5}
 
     <!-- DATA PANEL -->
     <div id="spanel-data">
-      <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">Manage your subject data. Use this feature to export subjects and import subjects. Subjects save sa a ".json" file. You can share your subjects with your friends that unavailable in library. Don't forget to upload Subjects created by you that unavailable in Library. After upload that subjects available in Library. So everyone can use it.</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">Manage your study data. Export to back up everything. Import to restore or merge from another device.</div>
       <div class="io-row" style="margin-bottom:10px">
         <button class="btn-primary" onclick="exportData()">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -482,7 +482,7 @@ textarea.form-inp{resize:vertical;min-height:80px;line-height:1.5}
       <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:10px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
           <span style="font-size:15px;font-weight:700">Study Tracker</span>
-          <span style="font-size:11px;color:var(--text3);background:var(--bg4);padding:2px 8px;border-radius:99px;font-family:var(--mono)">v1.9</span>
+          <span style="font-size:11px;color:var(--text3);background:var(--bg4);padding:2px 8px;border-radius:99px;font-family:var(--mono)">v1.91</span>
         </div>
         <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:8px">Track your AL/OL subjects and lessons. Mark lessons as Not Studied, Needs Work, Working or Confident. Watch your progress grow over time.</div>
         <div style="font-size:11px;color:var(--text3)">Made by D_amarasooriya with Claude ❤️</div>
@@ -1256,11 +1256,11 @@ function openDownload(){
 
 /* ── UPLOAD PANEL ── */
 // ↓ Replace with your Google Form submission URL (change /viewform to /formResponse)
-const UPLOAD_FORM_URL='https://docs.google.com/forms/d/e/YOUR_UPLOAD_FORM_ID/formResponse';
-const UL_FIELD_NAME   ='entry.000000001'; // ↓ Replace with your field entry IDs
-const UL_FIELD_SUBJECT='entry.000000002';
-const UL_FIELD_DATA   ='entry.000000003';
-const UL_FIELD_MSG    ='entry.000000004';
+const UPLOAD_FORM_URL='https://docs.google.com/forms/d/e/1FAIpQLSeHhEIbO89X9J0FgZa0mxryJn0xMEjzqjKJs19u2oN5PLpPqw/formResponse';
+const UL_FIELD_NAME   ='entry.16006554'; // ↓ Replace with your field entry IDs
+const UL_FIELD_SUBJECT='entry.372782553';
+const UL_FIELD_DATA   ='entry.509012555';
+const UL_FIELD_MSG    ='entry.1742862632';
 
 function populateUploadSelect(){
   const sel=document.getElementById('ul-subject-select');
@@ -1298,10 +1298,10 @@ async function submitUpload(){
 
 /* ── FEEDBACK PANEL ── */
 // ↓ Replace with your Google Form submission URL (change /viewform to /formResponse)
-const FEEDBACK_FORM_URL='https://docs.google.com/forms/d/e/YOUR_FEEDBACK_FORM_ID/formResponse';
-const FB_FIELD_TYPE   ='entry.000000005'; // ↓ Replace with your field entry IDs
-const FB_FIELD_MESSAGE='entry.000000006';
-const FB_FIELD_NAME   ='entry.000000007';
+const FEEDBACK_FORM_URL='https://docs.google.com/forms/d/e/1FAIpQLScRYvTrkpcyljBmcMdngLMTzlpfo3oEapPzD-qFMeVFc-5GxA/formResponse';
+const FB_FIELD_TYPE   ='entry.1002683208'; // ↓ Replace with your field entry IDs
+const FB_FIELD_MESSAGE='entry.1666369485';
+const FB_FIELD_NAME   ='entry.1275245789';
 
 let fbSelectedTag='Bug Report';
 function fbTagClick(el){
