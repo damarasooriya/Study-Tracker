@@ -36,7 +36,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .hdr{padding:20px 24px 0;position:sticky;top:0;z-index:100;background:var(--bg)}
 .hdr-inner{display:flex;align-items:center;justify-content:space-between;padding-bottom:16px;border-bottom:1px solid var(--border)}
 .hdr-title{font-size:13px;font-weight:500;color:var(--text3);letter-spacing:.1em;text-transform:uppercase}
-.hdr-back{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--text2);cursor:pointer;transition:color var(--tr);background:none;border:none;font-family:var(--font);padding:4px 0}
+.hdr-back{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--text2);cursor:pointer;transition:color var(--tr);background:none;border:none;font-family:var(--font);padding:8px 12px 8px 4px;min-height:44px}
 .hdr-back:hover{color:var(--text)}
 .hdr-back svg{width:16px;height:16px}
 .hdr-icon-btn{display:flex;align-items:center;justify-content:center;width:34px;height:34px;background:var(--bg2);border:1px solid var(--border2);color:var(--text2);border-radius:var(--radius-sm);cursor:pointer;transition:all var(--tr);flex-shrink:0;padding:0}
@@ -218,14 +218,33 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .sb.s-wk{border-color:var(--wk-border);color:var(--wk-t);background:var(--wk-bg)}
 .sb.s-cf{border-color:var(--cf-border);color:var(--cf-t);background:var(--cf-bg)}
 
-/* MOVE BUTTONS */
-.move-btns{display:flex;flex-direction:column;gap:2px;flex-shrink:0}
-.move-btn{width:22px;height:22px;background:none;border:1px solid var(--border);border-radius:4px;color:var(--text3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all var(--tr);padding:0}
-.move-btn:hover{border-color:var(--border2);color:var(--text);background:var(--bg4)}
-.move-btn:active{transform:scale(.9)}
-.move-btn:disabled{opacity:.2;cursor:default}
+/* DRAG HANDLE (replaces move buttons) */
+.drag-handle{width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:grab;flex-shrink:0;color:var(--text3);border-radius:var(--radius-sm);transition:color var(--tr),background var(--tr);touch-action:none}
+.drag-handle:hover{color:var(--text);background:var(--bg4)}
+.drag-handle:active{cursor:grabbing}
+.drag-handle svg{width:16px;height:16px}
+.lesson-card.drag-mode .drag-handle{display:flex}
+.lesson-card.dragging{opacity:.5;border:2px dashed var(--accent);background:var(--accent-dim)}
+.lesson-card.drag-over{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-bd)}
+/* Reorder mode bar */
+.reorder-bar{display:none;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--accent-dim);border:1px solid var(--accent-bd);border-radius:var(--radius-sm);margin-bottom:12px}
+.reorder-bar.active{display:flex}
+.reorder-bar-txt{font-size:13px;color:var(--accent);font-weight:500}
+.reorder-done-btn{background:var(--accent);color:#000;border:none;border-radius:var(--radius-sm);padding:6px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)}
 
-/* LESSON ACTIONS */
+/* FAB tooltip */
+.fab-wrap{position:fixed;bottom:28px;right:max(20px,calc(50% - 480px + 24px));z-index:200;display:flex;flex-direction:column;align-items:center;gap:8px}
+.fab-tooltip{background:var(--bg3);border:1px solid var(--border2);color:var(--text2);font-size:12px;font-weight:500;padding:5px 12px;border-radius:99px;white-space:nowrap;opacity:0;transform:translateY(6px);transition:opacity .2s,transform .2s;pointer-events:none;font-family:var(--font);order:-1}
+.fab-wrap:hover .fab-tooltip{opacity:1;transform:translateY(0)}
+.fab{background:var(--accent);color:#000;width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 24px var(--accent-bd);transition:all var(--tr);font-family:var(--font)}
+.fab:hover{filter:brightness(1.1);transform:scale(1.08)}
+.fab:active{transform:scale(.95)}
+
+/* DELETE CONFIRM MODAL */
+.del-confirm-actions{display:flex;gap:10px;margin-top:4px}
+.btn-danger{flex:1;background:#c0392b;color:#fff;border:none;border-radius:var(--radius-sm);padding:13px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all var(--tr)}
+.btn-danger:hover{background:#e74c3c}
+.btn-danger:active{transform:scale(.98)}
 .lc-actions{display:flex;gap:8px}
 .lac{padding:7px 14px;border-radius:var(--radius-sm);font-size:12px;cursor:pointer;font-family:var(--font);font-weight:500;transition:all var(--tr)}
 .lac-edit{background:transparent;color:var(--accent);border:1px solid var(--accent-bd)}
@@ -234,7 +253,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .lac-del:hover{background:rgba(204,68,68,.1)}
 
 /* FAB */
-.fab{position:fixed;bottom:28px;right:max(20px,calc(50% - 480px + 24px));background:var(--accent);color:#000;width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 24px rgba(212,168,67,.35);transition:all var(--tr);z-index:200;font-family:var(--font)}
+/* FAB defined in fab-wrap section above */
 .fab:hover{filter:brightness(1.1);transform:scale(1.08)}
 .fab:active{transform:scale(.95)}
 
@@ -406,7 +425,10 @@ textarea.form-inp{resize:vertical;min-height:80px;line-height:1.5}
     <div id="subj-detail"></div>
   </div>
 
-  <button class="fab" id="fab">+</button>
+  <div class="fab-wrap" id="fab-wrap">
+    <span class="fab-tooltip" id="fab-tooltip">Add Subject</span>
+    <button class="fab" id="fab">+</button>
+  </div>
 </div>
 
 <!-- ADD SUBJECT MODAL -->
@@ -416,7 +438,7 @@ textarea.form-inp{resize:vertical;min-height:80px;line-height:1.5}
     <div class="modal-ttl">Add Subject</div>
     <div class="form-field">
       <label class="form-lbl">Subject Name</label>
-      <input type="text" class="form-inp" id="subj-name-inp" placeholder="e.g. Combined Maths">
+      <input type="text" class="form-inp" id="subj-name-inp" placeholder="e.g. Combined Maths" maxlength="60">
     </div>
     <div class="form-field">
       <label class="form-lbl">Pick an Icon</label>
@@ -434,7 +456,7 @@ textarea.form-inp{resize:vertical;min-height:80px;line-height:1.5}
     <div class="modal-ttl" id="lesson-modal-ttl">Add Lesson</div>
     <div class="form-field">
       <label class="form-lbl">Lesson Name</label>
-      <input type="text" class="form-inp" id="lesson-name-inp" placeholder="e.g. Differentiation">
+      <input type="text" class="form-inp" id="lesson-name-inp" placeholder="e.g. Differentiation" maxlength="100">
     </div>
     <div class="form-field">
       <label class="form-lbl">Notes <span>(optional)</span></label>
@@ -523,9 +545,9 @@ textarea.form-inp{resize:vertical;min-height:80px;line-height:1.5}
     <!-- TABS -->
     <div class="dl-tabs" style="grid-template-columns:repeat(4,1fr)">
       <button class="dl-tab active" id="dltab-lib"    onclick="switchDlTab('lib')">Library</button>
+      <button class="dl-tab"        id="dltab-upload" onclick="switchDlTab('upload')">Upload</button>
       <button class="dl-tab"        id="dltab-import" onclick="switchDlTab('import')">Import</button>
       <button class="dl-tab"        id="dltab-export" onclick="switchDlTab('export')">Export</button>
-      <button class="dl-tab"        id="dltab-upload" onclick="switchDlTab('upload')">Upload</button>
     </div>
 
     <!-- LIBRARY PANEL -->
@@ -622,6 +644,19 @@ textarea.form-inp{resize:vertical;min-height:80px;line-height:1.5}
   </div>
 </div>
 
+<!-- DELETE CONFIRM MODAL -->
+<div class="modal-overlay" id="modal-del-confirm">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-ttl" id="del-confirm-title" style="margin-bottom:8px">Delete?</div>
+    <div id="del-confirm-sub" style="font-size:14px;color:var(--text2);margin-bottom:20px;line-height:1.5"></div>
+    <div class="del-confirm-actions">
+      <button class="btn-secondary" style="flex:1;margin:0" onclick="closeMod('modal-del-confirm')">Cancel</button>
+      <button class="btn-danger" id="del-confirm-btn">Delete</button>
+    </div>
+  </div>
+</div>
+
 <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
 <div class="toast" id="toast"></div>
 
@@ -705,7 +740,7 @@ function applyTheme(name){
 
 function showToast(msg){
   const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2400);
+  setTimeout(()=>t.classList.remove('show'),3800);
 }
 
 function greeting(){
@@ -749,18 +784,18 @@ function renderDash(){
   const attEl=document.getElementById('att-section');
   const attItems=[];
   db.subjects.forEach(s=>s.lessons.forEach(l=>{
-    if(l.status==='nw')attItems.push({lesson:l.name,subject:s.name,reason:'nw'});
+    if(l.status==='nw')attItems.push({lesson:l.name,subject:s.name,subjId:s.id,reason:'nw'});
   }));
   db.subjects.forEach(s=>s.lessons.forEach(l=>{
-    if(l.status==='wk')attItems.push({lesson:l.name,subject:s.name,reason:'wk'});
+    if(l.status==='wk')attItems.push({lesson:l.name,subject:s.name,subjId:s.id,reason:'wk'});
   }));
   db.subjects.forEach(s=>s.lessons.forEach(l=>{
-    if(l.status==='ns'||!l.status)attItems.push({lesson:l.name,subject:s.name,reason:'ns'});
+    if(l.status==='ns'||!l.status)attItems.push({lesson:l.name,subject:s.name,subjId:s.id,reason:'ns'});
   }));
   db.subjects.forEach(s=>s.lessons.forEach(l=>{
     if(l.status!=='cf'&&l.lastStudied&&daysSince(l.lastStudied)>=OVERDUE_DAYS)
       if(!attItems.find(x=>x.lesson===l.name&&x.subject===s.name))
-        attItems.push({lesson:l.name,subject:s.name,reason:'overdue'});
+        attItems.push({lesson:l.name,subject:s.name,subjId:s.id,reason:'overdue'});
   }));
   if(attItems.length){
     const shown=attItems.slice(0,20);
@@ -772,7 +807,7 @@ function renderDash(){
         '<span class="att-box-count">'+attItems.length+' lesson'+(attItems.length!==1?'s':'')+'</span>'+
       '</div>'+
       '<div class="att-scroll">'+
-      shown.map((i,idx)=>`<div class="att-item">
+      shown.map((i,idx)=>`<div class="att-item" style="cursor:pointer" onclick="openSubject('${i.subjId}')">
         <span class="att-num">${idx+1}</span>
         <div class="att-info">
           <div class="att-lesson">${esc(i.lesson)}</div>
@@ -783,7 +818,9 @@ function renderDash(){
       (extra>0?`<div style="font-size:11px;color:var(--text3);padding:10px 16px;text-align:center">+${extra} more</div>`:'')+
       '</div>'+
     '</div>';
-  } else attEl.innerHTML='';
+  } else {
+    attEl.innerHTML='<div style="background:var(--cf-bg);border:1px solid var(--cf-border);border-radius:var(--radius);padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:10px"><span style="font-size:18px">🎉</span><div><div style="font-size:13px;font-weight:600;color:var(--cf-t)">All caught up!</div><div style="font-size:12px;color:var(--text3);margin-top:2px">No lessons need attention right now.</div></div></div>';
+  }
 
   // SUBJECTS
   const sl=document.getElementById('subjects-list');
@@ -829,6 +866,7 @@ function openSubject(id){
   </button>`;
   document.getElementById('hdr-right').innerHTML=`<button class="del-subj-btn" onclick="deleteSubject('${id}')">Delete subject</button>`;
   renderSubjectDetail();
+  updateFabTooltip();
 }
 
 function goBack(){
@@ -854,6 +892,8 @@ function goBack(){
     </button>
   </div>`;
   renderDash();
+  updateFabTooltip();
+  reorderMode=false;
 }
 
 /* intercept browser/phone back AND forward buttons */
@@ -896,7 +936,7 @@ function renderSubjectDetail(){
 
   // FLAT list — lessons stay in insertion order, no jumping
   const lessonsHtml=tot?`
-    ${tot>=5?`<div class="search-wrap">
+    ${tot>=3?`<div class="search-wrap">
       <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input class="search-inp" id="lesson-search" placeholder="Search lessons..." oninput="filterLessons(this.value)" autocomplete="off">
       <button class="search-clear" id="search-clear" onclick="clearSearch()">×</button>
@@ -927,10 +967,15 @@ function renderSubjectDetail(){
         </div>
       </div>
       <div class="sd-right">
-        <div class="sec-hdr"><span class="sec-lbl">Lessons</span></div>
+        <div class="sec-hdr">
+          <span class="sec-lbl">Lessons</span>
+          ${tot?`<button onclick="${reorderMode?'exitReorderMode()':'enterReorderMode()'}" style="background:${reorderMode?'var(--accent)':'none'};color:${reorderMode?'#000':'var(--text3)'};border:1px solid ${reorderMode?'var(--accent)':'var(--border2)'};border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all var(--tr)">${reorderMode?'✓ Done':'⠿ Reorder'}</button>`:''}
+        </div>
+        ${reorderMode?'<div style="font-size:12px;color:var(--text3);margin-bottom:10px">Drag the ≡ handle to reorder lessons</div>':''}
         ${lessonsHtml}
       </div>
     </div>`;
+  if(reorderMode)setTimeout(initDrag,30);
 }
 
 function renderLessonCard(lesson,idx,total){
@@ -973,31 +1018,28 @@ function renderLessonCard(lesson,idx,total){
     </div>
   </div>`:'<div class="lc-panel"></div>';
 
-  // Move up/down arrows
-  const moveHtml=`<div class="move-btns" onclick="event.stopPropagation()">
-    <button class="move-btn" onclick="moveLesson('${lesson.id}',-1,event)" ${idx===0?'disabled':''} title="Move up">
-      <svg viewBox="0 0 10 10" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="2,7 5,3 8,7"/></svg>
-    </button>
-    <button class="move-btn" onclick="moveLesson('${lesson.id}',1,event)" ${idx===total-1?'disabled':''} title="Move down">
-      <svg viewBox="0 0 10 10" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="2,3 5,7 8,3"/></svg>
-    </button>
-  </div>`;
+  const NEXT_LABEL={'ns':'Tap → Needs Work','nw':'Tap → Working','wk':'Tap → Confident','cf':'Tap → Not Studied'};
 
-  return`<div class="lesson-card ${cardClass}" id="lc-${lesson.id}">
-    <div class="lc-top" onclick="toggleLesson('${lesson.id}')">
-      <button class="status-btn ${st}" onclick="cycleStatus('${lesson.id}',event)" title="Cycle status">
+  // Drag handle (hamburger) — only shown in reorder mode
+  const dragHandleHtml=reorderMode?`<div class="drag-handle" title="Drag to reorder">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+  </div>`:'';
+
+  return`<div class="lesson-card ${cardClass}" id="lc-${lesson.id}" data-id="${lesson.id}">
+    <div class="lc-top"${reorderMode?'':` onclick="toggleLesson('${lesson.id}')"`}>
+      ${reorderMode?dragHandleHtml:''}
+      <button class="status-btn ${st}" onclick="cycleStatus('${lesson.id}',event)" title="${NEXT_LABEL[st]||''}">
         ${statusIconSvg}
       </button>
       <div class="lc-info">
         <div class="lc-name">${esc(lesson.name)}</div>
         <div class="lc-meta">${meta}</div>
       </div>
-      ${moveHtml}
-      <button class="lc-chevron${isOpen?' open':''}" onclick="toggleLesson('${lesson.id}',event)">
+      ${!reorderMode?`<button class="lc-chevron${isOpen?' open':''}" onclick="toggleLesson('${lesson.id}',event)">
         <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polyline points="4,6 8,10 12,6"/></svg>
-      </button>
+      </button>`:''}
     </div>
-    ${panel}
+    ${!reorderMode?panel:''}
   </div>`;
 }
 
@@ -1041,20 +1083,120 @@ function moveLesson(id,dir,e){
 
 function deleteLesson(id,e){
   e.stopPropagation();
-  if(!confirm('Delete this lesson?'))return;
   const s=db.subjects.find(x=>x.id===curSubjId);
-  s.lessons=s.lessons.filter(l=>l.id!==id);
-  expandedLesson=null;sv();renderSubjectDetail();showToast('Lesson deleted');
+  const l=s.lessons.find(x=>x.id===id);
+  confirmDelete('Delete lesson?',`"${l.name}" will be permanently removed.`,()=>{
+    s.lessons=s.lessons.filter(x=>x.id!==id);
+    expandedLesson=null;sv();renderSubjectDetail();showToast('Lesson deleted');
+  });
 }
 
 function deleteSubject(id){
   const s=db.subjects.find(x=>x.id===id);
-  if(!confirm('Delete "'+s.name+'" and all its lessons?'))return;
-  db.subjects=db.subjects.filter(x=>x.id!==id);
-  sv();goBack();showToast('Subject deleted');
+  confirmDelete(`Delete "${s.name}"?`,`All ${s.lessons.length} lessons will be permanently removed. This cannot be undone.`,()=>{
+    db.subjects=db.subjects.filter(x=>x.id!==id);
+    sv();goBack();showToast('Subject deleted');
+  });
 }
 
-/* ── FAB ── */
+/* ── DELETE CONFIRM ── */
+let _delCb=null;
+function confirmDelete(title,sub,cb){
+  document.getElementById('del-confirm-title').textContent=title;
+  document.getElementById('del-confirm-sub').textContent=sub;
+  _delCb=cb;
+  openMod('modal-del-confirm');
+}
+document.getElementById('del-confirm-btn').addEventListener('click',()=>{
+  closeMod('modal-del-confirm');
+  if(_delCb){_delCb();_delCb=null;}
+});
+
+/* ── DRAG REORDER ── */
+let reorderMode=false;
+let dragSrcId=null;
+
+function enterReorderMode(){
+  reorderMode=true;
+  document.getElementById('fab-wrap').style.display='none';
+  renderSubjectDetail();
+}
+function exitReorderMode(){
+  reorderMode=false;
+  document.getElementById('fab-wrap').style.display='';
+  renderSubjectDetail();
+}
+
+function initDrag(){
+  const cards=document.querySelectorAll('.lesson-card[data-id]');
+  cards.forEach(card=>{
+    const handle=card.querySelector('.drag-handle');
+    if(!handle)return;
+    // Mouse
+    handle.addEventListener('mousedown',e=>{
+      e.preventDefault();
+      dragSrcId=card.dataset.id;
+      card.classList.add('dragging');
+      const onMove=ev=>{
+        const els=document.elementsFromPoint(ev.clientX,ev.clientY);
+        const target=els.find(el=>el.classList.contains('lesson-card')&&el!==card);
+        document.querySelectorAll('.lesson-card').forEach(c=>c.classList.remove('drag-over'));
+        if(target)target.classList.add('drag-over');
+      };
+      const onUp=ev=>{
+        card.classList.remove('dragging');
+        document.querySelectorAll('.lesson-card').forEach(c=>c.classList.remove('drag-over'));
+        const els=document.elementsFromPoint(ev.clientX,ev.clientY);
+        const target=els.find(el=>el.classList.contains('lesson-card')&&el.dataset.id&&el.dataset.id!==dragSrcId);
+        if(target)swapLessons(dragSrcId,target.dataset.id);
+        dragSrcId=null;
+        document.removeEventListener('mousemove',onMove);
+        document.removeEventListener('mouseup',onUp);
+      };
+      document.addEventListener('mousemove',onMove);
+      document.addEventListener('mouseup',onUp);
+    });
+    // Touch
+    handle.addEventListener('touchstart',e=>{
+      e.preventDefault();
+      dragSrcId=card.dataset.id;
+      card.classList.add('dragging');
+      const onMove=ev=>{
+        const t=ev.touches[0];
+        const els=document.elementsFromPoint(t.clientX,t.clientY);
+        const target=els.find(el=>el.classList.contains('lesson-card')&&el!==card);
+        document.querySelectorAll('.lesson-card').forEach(c=>c.classList.remove('drag-over'));
+        if(target)target.classList.add('drag-over');
+      };
+      const onEnd=ev=>{
+        card.classList.remove('dragging');
+        document.querySelectorAll('.lesson-card').forEach(c=>c.classList.remove('drag-over'));
+        const t=ev.changedTouches[0];
+        const els=document.elementsFromPoint(t.clientX,t.clientY);
+        const target=els.find(el=>el.classList.contains('lesson-card')&&el.dataset.id&&el.dataset.id!==dragSrcId);
+        if(target)swapLessons(dragSrcId,target.dataset.id);
+        dragSrcId=null;
+        handle.removeEventListener('touchmove',onMove);
+        handle.removeEventListener('touchend',onEnd);
+      };
+      handle.addEventListener('touchmove',onMove,{passive:false});
+      handle.addEventListener('touchend',onEnd);
+    },{passive:false});
+  });
+}
+
+function swapLessons(idA,idB){
+  const s=db.subjects.find(x=>x.id===curSubjId);
+  const ia=s.lessons.findIndex(l=>l.id===idA);
+  const ib=s.lessons.findIndex(l=>l.id===idB);
+  if(ia<0||ib<0)return;
+  const tmp=s.lessons[ia];s.lessons[ia]=s.lessons[ib];s.lessons[ib]=tmp;
+  sv();renderSubjectDetail();
+}
+function updateFabTooltip(){
+  const tip=document.getElementById('fab-tooltip');
+  if(tip)tip.textContent=curSubjId?'Add Lesson':'Add Subject';
+}
 document.getElementById('fab').addEventListener('click',()=>{
   if(curSubjId)openAddLesson();
   else openAddSubject();
@@ -1239,9 +1381,7 @@ function importData(e){
 /* ── MODAL HELPERS ── */
 function openMod(id){document.getElementById(id).classList.add('open')}
 function closeMod(id){document.getElementById(id).classList.remove('open')}
-document.querySelectorAll('.modal-overlay').forEach(o=>{
-  o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open')});
-});
+// Intentionally NOT closing modals on overlay click — prevents accidental dismissal
 
 function shake(id){
   const el=document.getElementById(id);
@@ -1298,8 +1438,11 @@ const UL_FIELD_SUBJECT='entry.372782553';
 const UL_FIELD_DATA   ='entry.509012555';
 const UL_FIELD_MSG    ='entry.1742862632';
 // Add these two new field IDs to your Google Form and update below:
-const UL_FIELD_GRADE  ='entry.000000010'; // ← replace with real entry ID
-const UL_FIELD_COUNTRY='entry.000000011'; // ← replace with real entry ID
+const UL_FIELD_GRADE  ='entry.000000010'; // ← add Grade field to your Google Form and replace
+const UL_FIELD_COUNTRY='entry.000000011'; // ← add Country field to your Google Form and replace
+
+// NOTE: Until you add Grade and Country fields to your Google Form,
+// grade and country are automatically appended to the Message field below.
 
 function populateUploadSelect(){
   const sel=document.getElementById('ul-subject-select');
@@ -1322,14 +1465,21 @@ async function submitUpload(){
     showToast('Upload form not set up yet.');return;
   }
   const payload={version:2,exported:new Date().toISOString(),subjects:[subj]};
+  // Build full message including grade and country so they always reach the sheet
+  const fullMsg=[
+    msg,
+    grade?'Grade: '+grade:'',
+    country?'Country: '+country:''
+  ].filter(Boolean).join('\n');
   try{
     const body=new URLSearchParams();
     body.append(UL_FIELD_NAME,name);
     body.append(UL_FIELD_SUBJECT,subj.name);
     body.append(UL_FIELD_DATA,JSON.stringify(payload));
-    body.append(UL_FIELD_MSG,msg);
-    if(grade)body.append(UL_FIELD_GRADE,grade);
-    if(country)body.append(UL_FIELD_COUNTRY,country);
+    body.append(UL_FIELD_MSG,fullMsg);
+    // Also try dedicated fields if they have real IDs
+    if(!UL_FIELD_GRADE.includes('000000010')&&grade)body.append(UL_FIELD_GRADE,grade);
+    if(!UL_FIELD_COUNTRY.includes('000000011')&&country)body.append(UL_FIELD_COUNTRY,country);
     await fetch(UPLOAD_FORM_URL,{method:'POST',mode:'no-cors',body});
   }catch(e){}
   document.getElementById('ul-name').value='';
@@ -1426,15 +1576,15 @@ function renderLibrary(index,filter){
     const already=existingNames.has((item.name||'').trim().toLowerCase());
     const realIdx=index.subjects.indexOf(item);
     const tag=item.tag||item.category||'';
-    // uploader info
     const uploader=item.uploader||item.author||'';
     const grade=item.grade||'';
     const country=item.country||'';
-    const metaParts=[];
-    if(uploader)metaParts.push(esc(uploader));
-    if(grade)metaParts.push(esc(grade));
-    if(country)metaParts.push(esc(country));
-    const uploaderLine=metaParts.length?`<div style="font-size:10px;color:var(--text3);margin-top:3px">${metaParts.join(' · ')}</div>`:'';
+    // build uploader line: "Name · Country" (grade omitted from display per design)
+    const uploaderParts=[];
+    if(uploader)uploaderParts.push(esc(uploader));
+    if(country)uploaderParts.push(esc(country));
+    const uploaderLine=uploaderParts.length
+      ?`<div style="font-size:10px;color:var(--text3);margin-top:2px">${uploaderParts.join(' · ')}</div>`:'';
     return`<div class="lib-card${already?' added':''}" id="libcard-${realIdx}">
       <div class="lib-card-info">
         <div class="lib-name">${esc(item.emoji||'📚')} ${esc(item.name)}</div>
