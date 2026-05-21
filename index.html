@@ -350,14 +350,15 @@ html.lt .np{background:rgba(0,0,0,.06);border-color:rgba(0,0,0,.09)}
 .lc-cb.on{background:var(--acc);border-color:var(--acc)}
 /* ANALYTICS NEW WIDGETS */
 /* Heatmap */
-.hm-grid{display:grid;grid-template-columns:repeat(13,1fr);gap:3px;margin-bottom:6px}
-.hm-cell{aspect-ratio:1;border-radius:3px;background:var(--gb);transition:background .2s;cursor:default;position:relative}
+.hm-grid{display:grid;gap:3px;margin-bottom:6px}
+.hm-cell{width:100%;aspect-ratio:1;border-radius:3px;background:var(--gb);transition:background .2s;cursor:default;position:relative;min-width:0}
 .hm-cell.l1{background:rgba(74,222,128,.2)}
 .hm-cell.l2{background:rgba(74,222,128,.45)}
 .hm-cell.l3{background:rgba(74,222,128,.7)}
 .hm-cell.l4{background:rgba(74,222,128,.95)}
 .hm-legend{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--tx3);justify-content:flex-end;margin-top:4px}
 .hm-leg-cell{width:10px;height:10px;border-radius:2px}
+.hm-label-row{display:flex;justify-content:space-between;font-size:9px;color:var(--tx3);margin-bottom:4px;letter-spacing:.03em}
 /* Velocity chart */
 .vc-wrap{position:relative;width:100%;height:90px}
 .vc-wrap svg{width:100%;height:100%}
@@ -1537,12 +1538,17 @@ function renderStat(){
     +'<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--tx3);margin-top:4px"><span>30 days ago</span><span>today</span></div>'
     +'</div>';
 
-  /* ── #2 HEATMAP (last 91 days = 13 weeks) ── */
-  var hmDays=91;
+  /* ── #2 HEATMAP (responsive: more weeks on wider screens) ── */
+  var hmContainerWidth=(function(){var el=document.getElementById('v-stat');return el?el.offsetWidth-40:300;})();
+  var hmCellSize=12,hmGap=3;
+  var hmCols=Math.max(13,Math.floor((hmContainerWidth+hmGap)/(hmCellSize+hmGap)));
+  hmCols=Math.min(hmCols,53); /* cap at 53 weeks (1 year) */
+  var hmRows=7;
+  var hmDays=hmCols*hmRows;
   var hmMap={};
   db.subjects.forEach(function(s){s.lessons.forEach(function(l){if(l.lastStudied&&l.lastStudied>=now-hmDays*dayMs){var k=dateKey(l.lastStudied);hmMap[k]=(hmMap[k]||0)+1;}});});
   db.pomoLog.forEach(function(p){if(p.ts>=now-hmDays*dayMs){var k=dateKey(p.ts);hmMap[k]=(hmMap[k]||0)+Math.ceil(p.mins/10);}});
-  var hmMax=Math.max(1,Math.max.apply(null,Object.keys(hmMap).map(function(k){return hmMap[k];})||[1]));
+  var hmMax=Math.max(1,Math.max.apply(null,Object.keys(hmMap).length?Object.keys(hmMap).map(function(k){return hmMap[k];}):([1])));
   var hmCells='';
   for(var hi=hmDays-1;hi>=0;hi--){
     var hd=new Date(now-hi*dayMs);
@@ -1551,8 +1557,31 @@ function renderStat(){
     var hl=hv===0?'':hv<hmMax*.25?'l1':hv<hmMax*.5?'l2':hv<hmMax*.75?'l3':'l4';
     hmCells+='<div class="hm-cell '+hl+'" title="'+hd.toLocaleDateString('en-GB',{day:'numeric',month:'short'})+(hv?' · '+hv+' activities':'')+'"></div>';
   }
+  /* month labels: find first day of each month in the range */
+  var hmLabelCells='';
+  var hmLabelMap={};
+  for(var hli=hmDays-1;hli>=0;hli--){
+    var hld=new Date(now-hli*dayMs);
+    var hlPos=hmDays-1-hli; /* column index from left (0-based day index) */
+    var hlCol=Math.floor(hlPos/7); /* which week column */
+    if(hld.getDate()<=7&&!hmLabelMap[hld.getMonth()]){
+      hmLabelMap[hld.getMonth()]=hlCol;
+    }
+  }
+  var hmMonthNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var hmLabelArr=[];
+  Object.keys(hmLabelMap).forEach(function(m){hmLabelArr.push({col:hmLabelMap[m],name:hmMonthNames[parseInt(m,10)]});});
+  hmLabelArr.sort(function(a,b){return a.col-b.col;});
+  var hmLabelH='<div class="hm-label-row" style="position:relative;height:14px;">';
+  hmLabelArr.forEach(function(lbl){
+    var leftPct=(lbl.col/hmCols*100).toFixed(1);
+    hmLabelH+='<span style="position:absolute;left:'+leftPct+'%">'+lbl.name+'</span>';
+  });
+  hmLabelH+='</div>';
   var heatmapH='<div class="gc ahc" style="padding:16px 18px;margin-bottom:14px">'
-    +'<div class="hm-grid">'+hmCells+'</div>'
+    +'<div style="font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--tx3);margin-bottom:8px">Activity · last '+(hmDays)+' days</div>'
+    +hmLabelH
+    +'<div class="hm-grid" style="grid-template-columns:repeat('+hmCols+',1fr);grid-template-rows:repeat('+hmRows+',1fr);">'+hmCells+'</div>'
     +'<div class="hm-legend"><span>Less</span>'
     +'<div class="hm-leg-cell" style="background:var(--gb)"></div>'
     +'<div class="hm-leg-cell" style="background:rgba(74,222,128,.2)"></div>'
@@ -1649,6 +1678,9 @@ function renderStat(){
     +'<div class="gc ac"><div class="al">Subjects</div><div class="av">'+db.subjects.length+'</div><div class="as">'+db.subjects.filter(function(s){return s.lessons.length>0;}).length+' with lessons</div></div></div>'
     /* #4 insights */
     +insH
+    /* status donut */
+    +'<div class="sh" style="margin-bottom:12px"><span class="shl">Status Overview</span></div>'
+    +'<div class="gc ahc" style="padding:16px 18px;margin-bottom:14px"><div class="dw">'+donut+'<div class="dl"><div class="di"><div class="dd" style="background:rgba(74,222,128,.75)"></div><span class="dlb">Done<span class="dv"> '+tDn+'</span></span></div><div class="di"><div class="dd" style="background:rgba(91,156,246,.75)"></div><span class="dlb">Working<span class="dv"> '+tWk+'</span></span></div><div class="di"><div class="dd" style="background:rgba(251,146,60,.75)"></div><span class="dlb">Revision<span class="dv"> '+tRv+'</span></span></div><div class="di"><div class="dd" style="background:rgba(128,128,128,.2)"></div><span class="dlb">Not Started<span class="dv"> '+tNs+'</span></span></div></div></div></div>'
     /* #5 weekly comparison */
     +'<div class="sh" style="margin-bottom:12px"><span class="shl">This Week vs Last Week</span></div>'
     +wcH
@@ -1660,9 +1692,6 @@ function renderStat(){
     +heatmapH
     /* #3 forecast */
     +(db.examDate?'<div class="sh" style="margin-bottom:12px"><span class="shl">Completion Forecast</span><span style="font-size:11px;color:var(--tx3);margin-left:8px">at current pace</span></div>'+forecastH:'')
-    /* status donut */
-    +'<div class="sh" style="margin-bottom:12px"><span class="shl">Status Overview</span></div>'
-    +'<div class="gc ahc" style="padding:16px 18px;margin-bottom:14px"><div class="dw">'+donut+'<div class="dl"><div class="di"><div class="dd" style="background:rgba(74,222,128,.75)"></div><span class="dlb">Done<span class="dv"> '+tDn+'</span></span></div><div class="di"><div class="dd" style="background:rgba(91,156,246,.75)"></div><span class="dlb">Working<span class="dv"> '+tWk+'</span></span></div><div class="di"><div class="dd" style="background:rgba(251,146,60,.75)"></div><span class="dlb">Revision<span class="dv"> '+tRv+'</span></span></div><div class="di"><div class="dd" style="background:rgba(128,128,128,.2)"></div><span class="dlb">Not Started<span class="dv"> '+tNs+'</span></span></div></div></div></div>'
     /* completion by subject */
     +'<div class="sh" style="margin-bottom:12px"><span class="shl">Completion by Subject</span></div>'
     +'<div class="gc ahc" style="padding:16px 18px;margin-bottom:14px">'+(db.subjects.length?'<div class="bc">'+cH+'</div>':'<div style="font-size:12px;color:var(--tx3)">No subjects yet.</div>')+'</div>'
@@ -1934,6 +1963,18 @@ window.addEventListener('popstate',function(e){
   if(state.p==='subj'&&state.id){curSubj=state.id;openLsn=null;navTo('subj');return;}
   if(curSubj)goBack();
 });
+
+/* RESPONSIVE HEATMAP — re-render analytics on resize */
+(function(){
+  var resizeTimer;
+  window.addEventListener('resize',function(){
+    clearTimeout(resizeTimer);
+    resizeTimer=setTimeout(function(){
+      var statView=document.getElementById('v-stat');
+      if(statView&&statView.classList.contains('on'))renderStat();
+    },120);
+  });
+})();
 
 /* INIT */
 load();
