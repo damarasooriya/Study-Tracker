@@ -919,7 +919,7 @@ var curSubj=null,curView='dash',openLsn=null,editLsnId=null,pendSec=[],selEmoji=
 var reorder=false,delCb=null,fbTagVal='Bug Report';
 var pomoTimer=null,pomoSecs=0,pomoRun=false,pomoMode='focus',pomoSj=null,pomoLs=null;
 var examCountdownTimer=null;
-var lsnFilter='all',statRange='all',bulkMode=false,bulkSel={}; /* status filter on subject detail */
+var lsnFilter='all',statRange='week',bulkMode=false,bulkSel={}; /* status filter on subject detail */
 function gpd(m){return m==='focus'?ps.focusMins*60:m==='short'?ps.shortMins*60:ps.longMins*60;}
 
 /* Streak helpers */
@@ -1526,12 +1526,22 @@ function getStatCutoff(){
 }
 function renderStat(){
   var cutoff=getStatCutoff();
+  var periodLabel=statRange==='week'?'This Week':statRange==='month'?'Last 30 Days':'All Time';
+
+  /* ── global lesson counts (current status — always all-time) ── */
   var total=0,tDn=0,tWk=0,tRv=0;
   db.subjects.forEach(function(s){total+=s.lessons.length;s.lessons.forEach(function(l){if(l.status==='dn')tDn++;else if(l.status==='wk')tWk++;else if(l.status==='rv')tRv++;});});
   var tNs=total-tDn-tWk-tRv,pct=total?Math.round(tDn/total*100):0;
+
+  /* ── period-filtered Pomodoro log ── */
   var filtLog=db.pomoLog.filter(function(p){return!cutoff||p.ts>=cutoff;});
   var pmM=0;filtLog.forEach(function(p){pmM+=p.mins;});
   var sess=filtLog.filter(function(p){return p.mode==='focus';}).length;
+
+  /* ── period-filtered lessons studied ── */
+  var filtLessons=[];
+  db.subjects.forEach(function(s){s.lessons.forEach(function(l){if(!cutoff||( l.lastStudied&&l.lastStudied>=cutoff))filtLessons.push({l:l,s:s});});});
+  var periodLsnCount=cutoff?filtLessons.filter(function(x){return x.l.lastStudied&&x.l.lastStudied>=cutoff;}).length:total;
 
   if(!db.subjects.length&&!db.pomoLog.length){
     document.getElementById('v-stat').innerHTML=
@@ -1545,7 +1555,7 @@ function renderStat(){
   var dayMs=86400000;
   var now=Date.now();
 
-  /* ── #5 WEEKLY COMPARISON ── */
+  /* ── WEEKLY COMPARISON (always rolling 7-day vs prior 7-day) ── */
   var thisWkStart=now-7*dayMs, lastWkStart=now-14*dayMs;
   var thisWkLessons=0,lastWkLessons=0,thisWkMins=0,lastWkMins=0;
   db.subjects.forEach(function(s){s.lessons.forEach(function(l){
@@ -1569,8 +1579,8 @@ function renderStat(){
     +'<div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">'+deltaChip(lessonDelta)+deltaChip(minsDelta)+'</div>'
     +'</div></div>';
 
-  /* ── #1 VELOCITY CHART (lessons done + pomodoro focus sessions, last 30 days) ── */
-  var vcDays=30;
+  /* ── VELOCITY CHART — respects cutoff ── */
+  var vcDays=statRange==='week'?7:30;
   var vcLsnMap={},vcPomoMap={};
   db.subjects.forEach(function(s){s.lessons.forEach(function(l){
     if(l.lastStudied&&l.lastStudied>=now-vcDays*dayMs){
@@ -1593,7 +1603,7 @@ function renderStat(){
   var vcW=300,vcH2=80,vcPad=4;
   function vcPoints(vals){
     return vals.map(function(v,i){
-      var x=vcPad+i*(vcW-vcPad*2)/(vcDays-1);
+      var x=vcPad+i*(vcW-vcPad*2)/Math.max(1,vals.length-1);
       var y=vcH2-vcPad-(v/vcMax)*(vcH2-vcPad*2);
       return x.toFixed(1)+','+y.toFixed(1);
     }).join(' ');
@@ -1604,7 +1614,7 @@ function renderStat(){
   var vcPomoFill=vcPomoPts+' '+(vcW-vcPad).toFixed(1)+','+(vcH2-vcPad)+' '+vcPad+','+(vcH2-vcPad);
   var velocityH='<div class="gc ahc" style="padding:16px 18px;margin-bottom:14px">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
-    +'<div style="font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--tx3)">Activity — last 30 days</div>'
+    +'<div style="font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--tx3)">Activity — last '+vcDays+' days</div>'
     +'<div style="display:flex;gap:12px">'
     +'<span style="font-size:10px;color:rgba(74,222,128,.8);display:flex;align-items:center;gap:4px"><span style="width:18px;height:2px;background:rgba(74,222,128,.7);border-radius:1px;display:inline-block"></span>Lessons</span>'
     +'<span style="font-size:10px;color:rgba(147,197,253,.8);display:flex;align-items:center;gap:4px"><span style="width:18px;height:2px;background:rgba(147,197,253,.6);border-radius:1px;display:inline-block"></span>Pomodoros</span>'
@@ -1615,16 +1625,17 @@ function renderStat(){
     +'<polygon points="'+vcLsnFill+'" fill="rgba(74,222,128,.08)"/>'
     +'<polyline points="'+vcLsnPts+'" fill="none" stroke="rgba(74,222,128,.8)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>'
     +'</svg></div>'
-    +'<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--tx3);margin-top:4px"><span>30 days ago</span><span>today</span></div>'
+    +'<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--tx3);margin-top:4px"><span>'+vcDays+' days ago</span><span>today</span></div>'
     +'</div>';
 
-  /* ── #2 HEATMAP (responsive: more weeks on wider screens) ── */
+  /* ── HEATMAP — respects cutoff ── */
   var hmContainerWidth=(function(){var el=document.getElementById('v-stat');return el?el.offsetWidth-40:300;})();
   var hmCellSize=12,hmGap=3;
-  var hmCols=Math.max(13,Math.floor((hmContainerWidth+hmGap)/(hmCellSize+hmGap)));
-  hmCols=Math.min(hmCols,53); /* cap at 53 weeks (1 year) */
-  var hmRows=7;
-  var hmDays=hmCols*hmRows;
+  var hmDaysFixed=statRange==='week'?7:statRange==='month'?30:91;
+  var hmCols=statRange==='week'?7:Math.max(13,Math.floor((hmContainerWidth+hmGap)/(hmCellSize+hmGap)));
+  hmCols=Math.min(hmCols,53);
+  var hmRows=statRange==='week'?1:7;
+  var hmDays=statRange==='week'?7:hmCols*hmRows;
   var hmMap={},hmLsnMap={},hmPomoMap={};
   db.subjects.forEach(function(s){s.lessons.forEach(function(l){if(l.lastStudied&&l.lastStudied>=now-hmDays*dayMs){var k=dateKey(l.lastStudied);hmLsnMap[k]=(hmLsnMap[k]||0)+1;hmMap[k]=(hmMap[k]||0)+1;}});});
   db.pomoLog.forEach(function(p){if(p.mode==='focus'&&p.ts>=now-hmDays*dayMs){var k=dateKey(p.ts);hmPomoMap[k]=(hmPomoMap[k]||0)+1;hmMap[k]=(hmMap[k]||0)+1;}});
@@ -1640,31 +1651,26 @@ function renderStat(){
     if(hv){htip+=' · '+(hlsn?hlsn+' lesson'+(hlsn>1?'s':''):'')+( hlsn&&hpomo?' + ':'')+( hpomo?hpomo+' pomodoro'+(hpomo>1?'s':''):'');}
     hmCells+='<div class="hm-cell '+hl+'" title="'+htip+'"></div>';
   }
-  /* month labels: find first day of each month in the range */
-  var hmLabelCells='';
   var hmLabelMap={};
   for(var hli=hmDays-1;hli>=0;hli--){
     var hld=new Date(now-hli*dayMs);
-    var hlPos=hmDays-1-hli; /* column index from left (0-based day index) */
-    var hlCol=Math.floor(hlPos/7); /* which week column */
-    if(hld.getDate()<=7&&!hmLabelMap[hld.getMonth()]){
-      hmLabelMap[hld.getMonth()]=hlCol;
-    }
+    var hlPos=hmDays-1-hli;
+    var hlCol=Math.floor(hlPos/7);
+    if(hld.getDate()<=7&&!hmLabelMap[hld.getMonth()]){hmLabelMap[hld.getMonth()]=hlCol;}
   }
   var hmMonthNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   var hmLabelArr=[];
   Object.keys(hmLabelMap).forEach(function(m){hmLabelArr.push({col:hmLabelMap[m],name:hmMonthNames[parseInt(m,10)]});});
   hmLabelArr.sort(function(a,b){return a.col-b.col;});
   var hmLabelH='<div class="hm-label-row" style="position:relative;height:14px;">';
-  hmLabelArr.forEach(function(lbl){
-    var leftPct=(lbl.col/hmCols*100).toFixed(1);
-    hmLabelH+='<span style="position:absolute;left:'+leftPct+'%">'+lbl.name+'</span>';
-  });
+  hmLabelArr.forEach(function(lbl){var leftPct=(lbl.col/Math.max(hmCols,1)*100).toFixed(1);hmLabelH+='<span style="position:absolute;left:'+leftPct+'%">'+lbl.name+'</span>';});
   hmLabelH+='</div>';
+  var hmGridCols=statRange==='week'?7:hmCols;
+  var hmGridRows=statRange==='week'?1:7;
   var heatmapH='<div class="gc ahc" style="padding:16px 18px;margin-bottom:14px">'
-    +'<div style="font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--tx3);margin-bottom:8px">Activity · last '+(hmDays)+' days</div>'
-    +hmLabelH
-    +'<div class="hm-grid" style="grid-template-columns:repeat('+hmCols+',1fr);grid-template-rows:repeat('+hmRows+',1fr);">'+hmCells+'</div>'
+    +'<div style="font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--tx3);margin-bottom:8px">Activity · last '+hmDays+' days</div>'
+    +(statRange!=='week'?hmLabelH:'')
+    +'<div class="hm-grid" style="grid-template-columns:repeat('+hmGridCols+',1fr);grid-template-rows:repeat('+hmGridRows+',1fr);">'+hmCells+'</div>'
     +'<div class="hm-legend"><span>Less</span>'
     +'<div class="hm-leg-cell" style="background:var(--gb)" title="No activity"></div>'
     +'<div class="hm-leg-cell" style="background:rgba(74,222,128,.2)" title="1 lesson"></div>'
@@ -1674,14 +1680,13 @@ function renderStat(){
     +'<span>More</span></div>'
     +'</div>';
 
-  /* ── #3 COMPLETION FORECAST ── */
+  /* ── COMPLETION FORECAST — always uses 14-day velocity ── */
   var avgPerDay=(function(){
     var days=14,lsnMap={},pomoSet={};
     db.subjects.forEach(function(s){s.lessons.forEach(function(l){if(l.lastStudied&&l.lastStudied>=now-days*dayMs){var k=dateKey(l.lastStudied);lsnMap[k]=(lsnMap[k]||0)+1;}});});
     db.pomoLog.forEach(function(p){if(p.mode==='focus'&&p.ts>=now-days*dayMs){var k=dateKey(p.ts);pomoSet[k]=(pomoSet[k]||0)+1;}});
     var allKeys={};Object.keys(lsnMap).forEach(function(k){allKeys[k]=true;});Object.keys(pomoSet).forEach(function(k){allKeys[k]=true;});
     var totalLsn=0;Object.keys(lsnMap).forEach(function(k){totalLsn+=lsnMap[k];});
-    /* weight: lessons count directly; pomo days with no lessons count as 0.5 activity */
     var activeDays=Object.keys(allKeys).length;
     return activeDays>0?totalLsn/days:0;
   })();
@@ -1702,10 +1707,10 @@ function renderStat(){
   }
   var forecastH='<div class="gc ahc" style="padding:16px 18px;margin-bottom:14px">'+fcH+'</div>';
 
-  /* ── #4 BEST STUDY DAY + TIME INSIGHT ── */
+  /* ── INSIGHTS — respects cutoff ── */
   var dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   var dayCounts=[0,0,0,0,0,0,0],hrCounts=new Array(24).fill(0);
-  db.pomoLog.forEach(function(p){if(p.mode==='focus'){var d=new Date(p.ts);dayCounts[d.getDay()]+=p.mins;hrCounts[d.getHours()]+=p.mins;}});
+  filtLog.forEach(function(p){if(p.mode==='focus'){var d=new Date(p.ts);dayCounts[d.getDay()]+=p.mins;hrCounts[d.getHours()]+=p.mins;}});
   var bestDay=dayCounts.indexOf(Math.max.apply(null,dayCounts));
   var bestHr=hrCounts.indexOf(Math.max.apply(null,hrCounts));
   var hrLabel=bestHr===0?'12 AM':bestHr<12?bestHr+' AM':bestHr===12?'12 PM':(bestHr-12)+' PM';
@@ -1715,7 +1720,7 @@ function renderStat(){
   if(tRv>0)insH+='<div class="ins-chip"><span class="ins-chip-ic">⚠️</span><strong>'+tRv+'</strong> lesson'+(tRv!==1?'s':'')+' need revision</div>';
   insH+='</div>';
 
-  /* ── #6 REVISION RATE PER SUBJECT ── */
+  /* ── REVISION RATE — always all-time (current state) ── */
   var rvH='';
   db.subjects.forEach(function(s){
     var t=s.lessons.length;if(!t)return;
@@ -1727,9 +1732,9 @@ function renderStat(){
   });
   if(!rvH)rvH='<div style="font-size:12px;color:var(--tx3);padding:8px 0">No revision flags yet.</div>';
 
-  /* ── #7 FOCUS RATIO ── */
-  var focusSess=db.pomoLog.filter(function(p){return p.mode==='focus';}).length;
-  var breakSess=db.pomoLog.filter(function(p){return p.mode!=='focus';}).length;
+  /* ── FOCUS RATIO — respects cutoff ── */
+  var focusSess=filtLog.filter(function(p){return p.mode==='focus';}).length;
+  var breakSess=filtLog.filter(function(p){return p.mode!=='focus';}).length;
   var totSess=focusSess+breakSess||1;
   var focusPct=Math.round(focusSess/totSess*100);
   var frH='<div class="fr-wrap"><div style="flex:1">'
@@ -1739,7 +1744,7 @@ function renderStat(){
     +'<span class="fr-leg"><span class="fr-dot" style="background:rgba(91,156,246,.4)"></span>Breaks: '+breakSess+' sessions ('+(100-focusPct)+'%)</span>'
     +'</div></div></div>';
 
-  /* ── EXISTING: donut + subject bars ── */
+  /* ── STUDY TIME BY SUBJECT — respects cutoff ── */
   var psub={};filtLog.forEach(function(p){if(p.subjId)psub[p.subjId]=(psub[p.subjId]||0)+p.mins;});
   var pmx=1;Object.keys(psub).forEach(function(k){if(psub[k]>pmx)pmx=psub[k];});
   var cx=60,cy=60,rv2=50,sw=9,ci=2*Math.PI*rv2;
@@ -1754,47 +1759,37 @@ function renderStat(){
     subjsWithTime.forEach(function(s){var m=psub[s.id]||0,bw=Math.round(m/pmx*100),hrs=m>=60?(Math.round(m/6)/10)+'h':m+'m';tH+='<div class="sbc-row"><span style="font-size:15px;flex-shrink:0">'+esc(s.emoji||'📚')+'</span><span class="sbc-nm">'+esc(s.name)+'</span><div class="sbc-bar"><div class="sbc-fill" style="width:'+bw+'%"></div></div><span class="sbc-val">'+hrs+'</span></div>';});
   } else {tH='<div style="font-size:12px;color:var(--tx3);padding:10px 0">No Pomodoro data'+(statRange!=='all'?' in this period':' yet')+'.</div>';}
 
+  /* ── STAT CARDS — period-aware ── */
   var rangeFilter='<div class="dr-row">'
-    +'<button class="dr-b'+(statRange==='all'?' on':'')+'" onclick="setStatRange(\'all\')">All Time</button>'
-    +'<button class="dr-b'+(statRange==='month'?' on':'')+'" onclick="setStatRange(\'month\')">Last 30 Days</button>'
     +'<button class="dr-b'+(statRange==='week'?' on':'')+'" onclick="setStatRange(\'week\')">This Week</button>'
+    +'<button class="dr-b'+(statRange==='month'?' on':'')+'" onclick="setStatRange(\'month\')">Last 30 Days</button>'
+    +'<button class="dr-b'+(statRange==='all'?' on':'')+'" onclick="setStatRange(\'all\')">All Time</button>'
     +'</div>';
 
   document.getElementById('v-stat').innerHTML=
     '<h2 style="font-size:20px;font-weight:600;letter-spacing:-.3px;margin-bottom:10px">Analytics</h2>'
     +rangeFilter
-    /* stat cards */
     +'<div class="ag"><div class="gc ac"><div class="al">Completion</div><div class="av">'+pct+'<span style="font-size:14px;color:var(--tx3)">%</span></div><div class="as">'+tDn+'/'+total+' done</div></div>'
-    +'<div class="gc ac"><div class="al">Study Time</div><div class="av">'+(pmM>=60?Math.round(pmM/6)/10:pmM)+'<span style="font-size:14px;color:var(--tx3)">'+(pmM>=60?'h':'m')+'</span></div><div class="as">'+sess+' sessions</div></div>'
+    +'<div class="gc ac"><div class="al">Study Time</div><div class="av">'+(pmM>=60?Math.round(pmM/6)/10:pmM)+'<span style="font-size:14px;color:var(--tx3)">'+(pmM>=60?'h':'m')+'</span></div><div class="as">'+sess+' sessions · '+periodLabel+'</div></div>'
     +'<div class="gc ac"><div class="al">Needs Revision</div><div class="av" style="color:var(--rv-t)">'+tRv+'</div><div class="as">flagged</div></div>'
     +'<div class="gc ac"><div class="al">Subjects</div><div class="av">'+db.subjects.length+'</div><div class="as">'+db.subjects.filter(function(s){return s.lessons.length>0;}).length+' with lessons</div></div></div>'
-    /* #4 insights */
     +insH
-    /* status donut */
-    +'<div class="sh" style="margin-bottom:12px"><span class="shl">Status Overview</span></div>'
+    +'<div class="sh" style="margin-bottom:12px"><span class="shl">Status Overview</span><span style="font-size:11px;color:var(--tx3);margin-left:8px">all-time</span></div>'
     +'<div class="gc ahc" style="padding:16px 18px;margin-bottom:14px"><div class="dw">'+donut+'<div class="dl"><div class="di"><div class="dd" style="background:rgba(74,222,128,.75)"></div><span class="dlb">Done<span class="dv"> '+tDn+'</span></span></div><div class="di"><div class="dd" style="background:rgba(91,156,246,.75)"></div><span class="dlb">Working<span class="dv"> '+tWk+'</span></span></div><div class="di"><div class="dd" style="background:rgba(251,146,60,.75)"></div><span class="dlb">Revision<span class="dv"> '+tRv+'</span></span></div><div class="di"><div class="dd" style="background:rgba(128,128,128,.2)"></div><span class="dlb">Not Started<span class="dv"> '+tNs+'</span></span></div></div></div></div>'
-    /* #5 weekly comparison */
     +'<div class="sh" style="margin-bottom:12px"><span class="shl">This Week vs Last Week</span></div>'
     +wcH
-    /* #1 velocity */
-    +'<div class="sh" style="margin-bottom:6px"><span class="shl">Activity — Last 30 Days</span></div>'
+    +'<div class="sh" style="margin-bottom:6px"><span class="shl">Activity</span><span style="font-size:11px;color:var(--tx3);margin-left:8px">'+periodLabel+'</span></div>'
     +velocityH
-    /* #2 heatmap */
-    +'<div class="sh" style="margin-bottom:12px"><span class="shl">Activity Heatmap</span><span style="font-size:11px;color:var(--tx3);margin-left:8px">last 91 days</span></div>'
+    +'<div class="sh" style="margin-bottom:12px"><span class="shl">Activity Heatmap</span><span style="font-size:11px;color:var(--tx3);margin-left:8px">'+periodLabel+'</span></div>'
     +heatmapH
-    /* #3 forecast */
     +(db.examDate?'<div class="sh" style="margin-bottom:12px"><span class="shl">Completion Forecast</span><span style="font-size:11px;color:var(--tx3);margin-left:8px">at current pace</span></div>'+forecastH:'')
-    /* completion by subject */
-    +'<div class="sh" style="margin-bottom:12px"><span class="shl">Completion by Subject</span></div>'
+    +'<div class="sh" style="margin-bottom:12px"><span class="shl">Completion by Subject</span><span style="font-size:11px;color:var(--tx3);margin-left:8px">all-time</span></div>'
     +'<div class="gc ahc" style="padding:16px 18px;margin-bottom:14px">'+(db.subjects.length?'<div class="bc">'+cH+'</div>':'<div style="font-size:12px;color:var(--tx3)">No subjects yet.</div>')+'</div>'
-    /* #6 revision rate */
-    +'<div class="sh" style="margin-bottom:12px"><span class="shl">Revision Rate by Subject</span></div>'
+    +'<div class="sh" style="margin-bottom:12px"><span class="shl">Revision Rate by Subject</span><span style="font-size:11px;color:var(--tx3);margin-left:8px">all-time</span></div>'
     +'<div class="gc ahc" style="padding:16px 18px;margin-bottom:14px">'+rvH+'</div>'
-    /* study time */
-    +'<div class="sh" style="margin-bottom:12px"><span class="shl">Study Time by Subject</span><span style="font-size:11px;color:var(--tx3);margin-left:8px">'+(statRange==='week'?'this week':statRange==='month'?'last 30 days':'all time')+'</span></div>'
+    +'<div class="sh" style="margin-bottom:12px"><span class="shl">Study Time by Subject</span><span style="font-size:11px;color:var(--tx3);margin-left:8px">'+periodLabel+'</span></div>'
     +'<div class="gc ahc" style="padding:16px 18px;margin-bottom:14px">'+tH+'</div>'
-    /* #7 focus ratio */
-    +(db.pomoLog.length?'<div class="sh" style="margin-bottom:12px"><span class="shl">Focus vs Break Ratio</span></div>'
+    +(filtLog.length?'<div class="sh" style="margin-bottom:12px"><span class="shl">Focus vs Break Ratio</span><span style="font-size:11px;color:var(--tx3);margin-left:8px">'+periodLabel+'</span></div>'
     +'<div class="gc ahc" style="padding:16px 18px;margin-bottom:14px">'+frH+'</div>':'');
 }
 
