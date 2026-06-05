@@ -175,6 +175,7 @@ html.lt{
   --elev3:rgba(103,80,164,.1);
 }
 /* ── BASE ──────────────────────────────────────────────── */
+html,body{transition:background-color .25s ease,color .2s ease}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{background:var(--bg);overflow-x:clip}
 body{font-family:var(--fn);background:var(--bg);color:var(--tx);transition:background .3s,color .3s;overflow-x:clip;-webkit-font-smoothing:antialiased}
@@ -852,7 +853,8 @@ html.lt .streak-chip.has-streak{border-color:rgba(180,83,9,.25);background:rgba(
 
 .mdiv{height:1px;background:var(--md-outline-variant);margin:18px 0;opacity:.6}
 
-select.fi,select.tsel{background-image:none}
+@keyframes saveflash{0%{border-color:var(--md-primary);box-shadow:0 0 0 2px rgba(207,188,255,.25)}100%{border-color:transparent;box-shadow:none}}
+.just-saved{animation:saveflash .8s ease-out forwards}
 
 /* Pomodoro responsive */
 @media(max-width:400px){
@@ -1035,6 +1037,13 @@ select.fi,select.tsel{background-image:none}
   <button class="bs" onclick="closeMod('mst')" style="margin-top:14px">Close</button>
 </div></div>
 
+<div class="mo" id="mstreak"><div class="md" style="padding-bottom:28px">
+  <div class="mh"></div>
+  <div class="mt">Study Activity</div>
+  <div id="mstreak-body"></div>
+  <button class="bs" onclick="closeMod('mstreak')" style="margin-top:14px">Close</button>
+</div></div>
+
 <div class="mo" id="mph"><div class="md" style="padding-bottom:28px">
   <div class="mh"></div>
   <div class="mt">Session History</div>
@@ -1151,6 +1160,14 @@ var FB_URL='https://docs.google.com/forms/d/e/1FAIpQLScRYvTrkpcyljBmcMdngLMTzlpf
 var FB_TYPE='entry.1002683208',FB_MSG='entry.1666369485',FB_NAME='entry.1275245789';
 var UL_URL='https://docs.google.com/forms/d/e/1FAIpQLSeHhEIbO89X9J0FgZa0mxryJn0xMEjzqjKJs19u2oN5PLpPqw/formResponse';
 var UL_NM='entry.16006554',UL_SJ='entry.372782553',UL_DATA='entry.509012555',UL_MS='entry.1742862632';
+var EMOJI_CATS={
+  'Academic':['📚','📝','📖','✏️','📐','📏','🎓','📓','📒','📔','📕','📗','📘','📙'],
+  'Science':['⚗️','🔬','🧬','🔭','🧪','🧫','🧲','⚡','🔋','💡','🌡️','⚖️'],
+  'Tech':['💻','🖥️','📱','🖱️','⌨️','🖨️','📡','🔌','💾','📲','🤖','📊','📈'],
+  'Arts':['🎨','🎭','🎬','🎵','🎸','🎹','🎺','🎻','🖌️','✒️','🎤','🎧'],
+  'Nature':['🌿','🌊','🌏','🌱','🌸','🍀','🌍','☀️','🌙','⭐','🔥','❄️'],
+  'General':['🎯','🏆','💪','🧠','👁️','🔑','⏰','📅','🗓️','📌','🔖','💬']
+};
 var EMOJIS=['📐','⚗️','🔬','💻','📊','📚','🌿','🧬','🌏','🎨','📝','🧮','🔭','🏛️','📡','🔢','⚡','🧪','🌊','🔺'];
 var SN={ns:'wk',wk:'dn',dn:'rv',rv:'ns'};
 var SL={ns:'Not Started',wk:'Working',dn:'Done',rv:'Needs Revision'};
@@ -1220,6 +1237,9 @@ function load(){
   if(!wk.checklist)wk.checklist=[];
   try{var p=localStorage.getItem('alt_ps');if(p)Object.assign(ps,JSON.parse(p));}catch(e){}
   pomoSecs=gpd('focus');
+  var savedSj=localStorage.getItem('alt_pomo_sj');
+  var savedLs=localStorage.getItem('alt_pomo_ls');
+  if(savedSj&&db.subjects.find(function(s){return s.id===savedSj;})){pomoSj=savedSj;pomoLs=savedLs||null;}
   var th=localStorage.getItem('alt_th')||'dark';
   if(th==='light'){document.documentElement.classList.add('lt');var moon=document.getElementById('th-moon'),sun=document.getElementById('th-sun');if(moon&&sun){moon.style.display='none';sun.style.display='';}}
 }
@@ -1328,7 +1348,7 @@ function renderDash(){
   var chipClass='streak-chip'+(streak>0?' has-streak':'');
   var greetH='<div class="greet-row">'
     +'<div><h1>'+greet()+' ✦</h1><p>'+db.subjects.length+' subject'+(db.subjects.length!==1?'s':'')+' · '+total+' lesson'+(total!==1?'s':'')+'</p></div>'
-    +'<div class="'+chipClass+'"><div class="streak-chip-days">'+chipDots+'</div><span class="streak-chip-val">'+chipVal+'</span></div>'
+    +'<div class="'+chipClass+'" onclick="openStreakDetail()" style="cursor:pointer" title="See study history"><div class="streak-chip-days">'+chipDots+'</div><span class="streak-chip-val">'+chipVal+'</span></div>'
     +'</div>';
 
   /* ── 2. SEARCH ── */
@@ -1361,9 +1381,37 @@ function renderDash(){
       +'</div>'
       +'<div style="display:flex;gap:12px;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--gb);flex-wrap:wrap">'
       +'<span style="font-size:11px;color:var(--tx3)">⏱ '+(pmMin>=60?Math.round(pmMin/6)/10+'h':pmMin+'m')+' studied · '+pmSs+' sessions <span style="opacity:.6">(all-time)</span></span>'
-      +'<span style="font-size:11px;color:var(--tx3)">📋 Weekly: '+(wk.goal?wkDone+'/'+wk.goal+' done':'not set')+'</span>'
+      +(function(){
+        if(!wk.goal)return'<span style="font-size:11px;color:var(--tx3)">📋 Weekly: not set</span>';
+        var rem=Math.max(0,wk.goal-wkDone);
+        var now=new Date();var day=now.getDay();var daysLeft=day===0?0:(7-day);
+        if(rem===0)return'<span style="font-size:11px;color:var(--dn-t)">📋 Weekly goal complete ✓</span>';
+        var perDay=daysLeft>0?Math.ceil(rem/daysLeft):rem;
+        var urgColor=daysLeft<=1?'var(--rv-t)':daysLeft<=3?'var(--wk-t)':'var(--tx3)';
+        return'<span style="font-size:11px;color:'+urgColor+'">📋 '+perDay+' lesson'+(perDay!==1?'s':'')+' today to stay on track</span>';
+      })()
       +'</div>'
       +'</div>';
+  }
+
+  /* ── CONTINUE STUDYING BANNER ── */
+  var continueCard='';
+  if(hasData){
+    var bestSubj=null,bestLsn=null,bestTs=0;
+    db.subjects.forEach(function(s){
+      s.lessons.forEach(function(l){
+        if(l.status==='wk'&&(l.lastStudied||0)>bestTs){bestTs=l.lastStudied||0;bestSubj=s;bestLsn=l;}
+      });
+    });
+    if(bestSubj&&bestLsn){
+      continueCard='<div class="gc" style="margin-bottom:16px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;border:1px solid rgba(207,188,255,.2)" onclick="openSubjById(\''+bestSubj.id+'\',\''+bestLsn.id+'\')">'
+        +'<div style="width:36px;height:36px;border-radius:10px;background:rgba(207,188,255,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px">'+esc(bestSubj.emoji||'📚')+'</div>'
+        +'<div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--md-primary);margin-bottom:2px">Continue studying</div>'
+        +'<div style="font-size:14px;font-weight:500;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(bestLsn.name)+'</div>'
+        +'<div style="font-size:12px;color:var(--tx3)">'+esc(bestSubj.name)+(bestTs?' · '+fd(bestTs):'')+'</div></div>'
+        +'<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:var(--md-primary);fill:none;stroke-width:2;stroke-linecap:round;flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>'
+        +'</div>';
+    }
   }
 
   /* ── 5. NEEDS ATTENTION (compact) ── */
@@ -1373,7 +1421,18 @@ function renderDash(){
   att.sort(function(a,b){return(a.status==='rv'?0:1)-(b.status==='rv'?0:1);});
   var attCard='';
   if(att.length){
-    att.slice(0,8).forEach(function(x){var col=x.status==='rv'?'var(--rv-t)':'var(--wk-t)';var bg=x.status==='rv'?'var(--rv-bg)':'var(--wk-bg)';var bd=x.status==='rv'?'var(--rv-bd)':'var(--wk-bd)';attH+='<div class="att-row"><div class="att-dot" style="background:'+col+'"></div><div class="att-inf"><div class="att-nm">'+esc(x.name)+'</div><div class="att-sub">'+esc(x.se)+' '+esc(x.sn)+'</div></div><span class="att-tag" style="background:'+bg+';color:'+col+';border:1px solid '+bd+'">'+SLI(x.status)+'</span></div>';});
+    att.slice(0,8).forEach(function(x){
+      var col=x.status==='rv'?'var(--rv-t)':'var(--wk-t)';
+      var bg=x.status==='rv'?'var(--rv-bg)':'var(--wk-bg)';
+      var bd=x.status==='rv'?'var(--rv-bd)':'var(--wk-bd)';
+      var nextSt=SN[x.status];
+      var ico=x.status==='wk'?'<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2,8 4,5 7,7 10,3" stroke="'+SC.wk+'" stroke-width="1.8" stroke-linecap="round"/></svg>':'<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><line x1="6" y1="2.5" x2="6" y2="7" stroke="'+SC.rv+'" stroke-width="2" stroke-linecap="round"/><circle cx="6" cy="9.5" r=".9" fill="'+SC.rv+'"/></svg>';
+      attH+='<div class="att-row">'
+        +'<button class="sr r-'+x.status+'" title="Mark as '+SL[nextSt]+'" onclick="cycStFromDash(\''+x.id+'\',\''+x.sid+'\',this)" style="flex-shrink:0">'+ico+'</button>'
+        +'<div class="att-inf"><div class="att-nm">'+esc(x.name)+'</div><div class="att-sub">'+esc(x.se)+' '+esc(x.sn)+'</div></div>'
+        +'<span class="att-tag" style="background:'+bg+';color:'+col+';border:1px solid '+bd+'">'+SLI(x.status)+'</span>'
+        +'</div>';
+    });
     attCard='<div class="gc hg att" style="margin-bottom:16px">'
       +'<div class="att-hd"><span class="att-hl">Needs Attention</span><span style="font-size:11px;color:var(--tx3)">'+att.length+'</span></div>'
       +'<div class="att-sc">'+attH+'</div>'
@@ -1401,11 +1460,14 @@ var ring='<div class="sjc-ring-wrap"><div class="sjc-ring"><svg width="42" heigh
         +'<div class="sjc-ring-cnt">'+dn+'/'+t+'</div></div>';
       var lastStudied=getSubjLastStudied(s);
       var lsLine=lastStudied?'<div class="sjc-ls">'+fd(lastStudied)+'</div>':'';
-      sjH+='<div class="gc hg sjc" data-sid="'+s.id+'" onclick="openSubjEl(this)">'
+      sjH+='<div class="gc'+(subjReorder?'':' hg')+' sjc" data-sid="'+s.id+'" onclick="'+(subjReorder?'void(0)':'openSubjEl(this)')+'" style="'+(subjReorder?'cursor:default':'')+'">'
+        +(subjReorder?'<div class="sjc-dh" style="display:flex;align-items:center;gap:12px"><div style="cursor:grab;color:var(--tx3);font-size:20px;padding:0 4px 0 0;flex-shrink:0;user-select:none">⠿</div>':'')
         +'<div class="sjc-top"><div class="sjc-nr"><span class="sjc-ic">'+esc(s.emoji||'📚')+'</span>'
-        +'<div><div class="sjc-nm">'+esc(s.name)+'</div><div class="sjc-cn">'+t+' lesson'+(t!==1?'s':'')+'</div>'+lsLine+'</div></div>'
+        +'<div><div class="sjc-nm">'+esc(s.name)+'</div><div class="sjc-cn">'+t+' lesson'+(t!==1?'s':'')+' · <span style="color:var(--dn-t)">'+dn+' done</span></div>'+lsLine+'</div></div>'
         +ring+'</div>'
-        +'<div class="pills">'+pills+'</div></div>';
+        +'<div class="pills">'+pills+'</div>'
+        +(subjReorder?'</div>':'')
+        +'</div>';
     });
   } else {
     var OB_VERSION='2';
@@ -1505,12 +1567,40 @@ var ring='<div class="sjc-ring-wrap"><div class="sjc-ring"><svg width="42" heigh
     +gsH
     +focusSection
     +progressCard
+    +continueCard
     +attCard
-    +'<div class="dbs"><div class="sh"><span class="shl">Subjects</span></div>'+sjH+'</div>';
+    +'<div class="dbs"><div class="sh"><span class="shl">Subjects</span>'+(db.subjects.length>1?'<button class="shb" id="sjReorderBtn" onclick="toggleSubjReorder()">⠿ Reorder</button>':'')+'</div>'+sjH+'</div>';
 
   var wd=document.getElementById('wkdot');
   if(wd)wd.classList.toggle('on',wk.goal>0&&wk.checklist.filter(function(c){return!c.done;}).length>0);
   startExamCountdown();
+}
+function openStreakDetail(){
+  var h='';
+  var now=new Date();
+  for(var i=6;i>=0;i--){
+    var d=new Date(now);d.setDate(d.getDate()-i);
+    var y=d.getFullYear(),m=d.getMonth()+1,day=d.getDate();
+    var key=y+'-'+m+'-'+day;
+    var label=i===0?'Today':i===1?'Yesterday':d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+    var studied=[];
+    db.subjects.forEach(function(s){
+      s.lessons.forEach(function(l){
+        if(l.lastStudied){var ld=new Date(l.lastStudied);var lk=ld.getFullYear()+'-'+(ld.getMonth()+1)+'-'+ld.getDate();if(lk===key)studied.push({subj:s.name,emoji:s.emoji||'📚',lesson:l.name});}
+      });
+    });
+    var pomoCount=db.pomoLog.filter(function(p){var pd=new Date(p.ts);var pk=pd.getFullYear()+'-'+(pd.getMonth()+1)+'-'+pd.getDate();return pk===key&&p.mode==='focus';}).length;
+    h+='<div style="padding:10px 0;border-bottom:1px solid var(--gb)">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:'+(studied.length||pomoCount?'8px':'0')+'">'
+      +'<span style="font-size:13px;font-weight:500;color:'+(studied.length?'var(--tx)':'var(--tx3)')+'">'+label+'</span>'
+      +(pomoCount?'<span style="font-size:11px;color:var(--md-primary);background:rgba(207,188,255,.1);padding:2px 8px;border-radius:99px">⏱ '+pomoCount+' session'+(pomoCount!==1?'s':'')+'</span>':'')
+      +'</div>'
+      +(studied.length?'<div style="display:flex;flex-direction:column;gap:3px">'+studied.map(function(x){return'<div style="font-size:12px;color:var(--tx3)">'+x.emoji+' '+esc(x.subj)+' · '+esc(x.lesson)+'</div>';}).join('')+'</div>':'')
+      +((!studied.length&&!pomoCount)?'<div style="font-size:12px;color:var(--tx3)">No activity</div>':'')
+      +'</div>';
+  }
+  document.getElementById('mstreak-body').innerHTML=h;
+  openMod('mstreak');
 }
 function rotateTip(){tipIdx=(tipIdx+1)%TIPS.length;var tip=TIPS[tipIdx];var t=document.getElementById('tip-txt'),s=document.getElementById('tip-src');if(t)t.textContent=tip.t;if(s)s.textContent=tip.s;}
 
@@ -1523,7 +1613,7 @@ function globalSearch(q){
   db.subjects.forEach(function(s){
     s.lessons.forEach(function(l){
       if(l.name.toLowerCase().indexOf(term)>=0||s.name.toLowerCase().indexOf(term)>=0){
-        results.push({lname:l.name,sname:s.name,semoji:s.emoji||'📚',sid:s.id,st:l.status||'ns'});
+        results.push({lname:l.name,sname:s.name,semoji:s.emoji||'📚',sid:s.id,lid:l.id,st:l.status||'ns'});
       }
     });
   });
@@ -1532,7 +1622,7 @@ function globalSearch(q){
     var col=r.st==='dn'?'var(--dn-t)':r.st==='wk'?'var(--wk-t)':r.st==='rv'?'var(--rv-t)':'var(--tx3)';
     var bg=r.st==='dn'?'var(--dn-bg)':r.st==='wk'?'var(--wk-bg)':r.st==='rv'?'var(--rv-bg)':'var(--ns-bg)';
     var bd=r.st==='dn'?'var(--dn-bd)':r.st==='wk'?'var(--wk-bd)':r.st==='rv'?'var(--rv-bd)':'var(--ns-bd)';
-    h+='<div class="gsri" onclick="openSubjById(\''+r.sid+'\')">'
+    h+='<div class="gsri" onclick="openSubjById(\''+r.sid+'\',\''+r.lid+'\')">'
       +'<span style="font-size:16px">'+esc(r.semoji)+'</span>'
       +'<div style="flex:1;min-width:0"><div class="gsri-nm">'+esc(r.lname)+'</div><div class="gsri-sub">'+esc(r.sname)+'</div></div>'
       +'<span class="gsri-tag" style="background:'+bg+';color:'+col+';border:1px solid '+bd+'">'+SLI(r.st)+'</span>'
@@ -1543,7 +1633,7 @@ function globalSearch(q){
 function clearGlobalSearch(){var i=document.getElementById('gsi');if(i){i.value='';globalSearch('');}}
 
 function openSubjEl(el){openSubjById(el.dataset.sid);}
-function openSubjById(id){curSubj=id;openLsn=null;reorder=false;bulkMode=false;bulkSel={};history.pushState({p:'subj',id:id},null);navTo('subj');}
+function openSubjById(id,lid){curSubj=id;openLsn=lid||null;reorder=false;bulkMode=false;bulkSel={};history.pushState({p:'subj',id:id},null);navTo('subj');if(lid)setTimeout(function(){var el=document.getElementById('lc-'+lid);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},120);}
 
 /* ── SUBJECT DETAIL ── */
 function renderSubj(){
@@ -1562,7 +1652,9 @@ function renderSubj(){
     +(selCount?'<button class="blk-btn blk-dn" onclick="bulkSetSt(\'dn\')">✓ Done</button>':'')
     +(selCount?'<button class="blk-btn blk-wk" onclick="bulkSetSt(\'wk\')">Working</button>':'')
     +(selCount?'<button class="blk-btn blk-rv" onclick="bulkSetSt(\'rv\')">Revision</button>':'')
+    +(selCount?'<button class="blk-btn" style="background:var(--delete-soft-bg);color:var(--delete-soft);border:1px solid rgba(224,82,82,.3)" onclick="bulkDelete()">🗑 Delete</button>':'')
     +'<button class="blk-btn blk-cl" onclick="selAll()">All</button>'
+    +'<button class="blk-btn blk-cl" style="margin-left:auto" onclick="bulkMode=false;bulkSel={};renderSubj()">✕</button>'
     +'</div>':'';
   /* status filter tabs */
   var filterH='<div class="stf">'
@@ -1639,8 +1731,23 @@ function mkLC(l){
 
 function getLsn(id){var s=null;for(var i=0;i<db.subjects.length;i++){if(db.subjects[i].id===curSubj){s=db.subjects[i];break;}}if(!s)return null;for(var j=0;j<s.lessons.length;j++){if(s.lessons[j].id===id)return s.lessons[j];}return null;}
 function togLsnEl(el,e){if(e)e.stopPropagation();var id=el.dataset.lid||el.closest('[data-id]').dataset.id;openLsn=openLsn===id?null:id;renderSubj();}
-function cycStEl(el,e){e.stopPropagation();var l=getLsn(el.dataset.lid);if(!l)return;l.status=SN[l.status||'ns'];l.lastStudied=Date.now();sv();renderSubj();showToast(SI[l.status]+' '+SL[l.status]);}
-function setStEl(el,e){e.stopPropagation();var l=getLsn(el.dataset.lid);if(!l)return;l.status=el.dataset.st;if(l.status!=='ns')l.lastStudied=Date.now();sv();renderSubj();}
+function cycStFromDash(lid,sid,el){
+  var s=db.subjects.find(function(x){return x.id===sid;});
+  if(!s)return;
+  var l=s.lessons.find(function(x){return x.id===lid;});
+  if(!l)return;
+  l.status=SN[l.status||'ns'];l.lastStudied=Date.now();sv();
+  showToast(SI[l.status]+' '+SL[l.status]);renderDash();
+}
+function checkMilestone(s){
+  var t=s.lessons.length;if(!t)return;
+  var dn=s.lessons.filter(function(l){return l.status==='dn';}).length;
+  var pct=Math.round(dn/t*100);
+  var milestones={25:'🎯',50:'⚡',75:'🌟',100:'🎉'};
+  if(milestones[pct])showToast(milestones[pct]+' '+pct+'% of '+esc(s.name)+' done'+(pct===100?' — Subject complete!':'!'));
+}
+function cycStEl(el,e){e.stopPropagation();var l=getLsn(el.dataset.lid);if(!l)return;var prev=Math.round(db.subjects.find(function(s){return s.id===curSubj;}).lessons.filter(function(x){return x.status==='dn';}).length/db.subjects.find(function(s){return s.id===curSubj;}).lessons.length*100);l.status=SN[l.status||'ns'];l.lastStudied=Date.now();sv();var subj=db.subjects.find(function(s){return s.id===curSubj;});checkMilestone(subj);renderSubj();}
+function setStEl(el,e){e.stopPropagation();var l=getLsn(el.dataset.lid);if(!l)return;l.status=el.dataset.st;if(l.status!=='ns')l.lastStudied=Date.now();sv();var subj=db.subjects.find(function(s){return s.id===curSubj;});checkMilestone(subj);renderSubj();}
 function delLsnEl(el,e){e.stopPropagation();var l=getLsn(el.dataset.lid);if(!l)return;confDel('Delete lesson?','"'+l.name+'" will be permanently removed.',function(){var s=null;for(var i=0;i<db.subjects.length;i++){if(db.subjects[i].id===curSubj){s=db.subjects[i];break;}}if(s){s.lessons=s.lessons.filter(function(x){return x.id!==l.id;});wk.checklist=wk.checklist.filter(function(c){return c.lessonId!==l.id;});openLsn=null;sv();svw();renderSubj();showToast('Lesson deleted');}});}
 function editLsnEl(el,e){e.stopPropagation();var id=el.dataset.lid;var l=getLsn(id);if(!l)return;editLsnId=id;pendSec=(l.sections||[]).slice();document.getElementById('mls-t').textContent='Edit Lesson';document.getElementById('lsi').value=l.name||'';document.getElementById('lni').value=l.notes||'';document.getElementById('lli').value=l.link||'';document.getElementById('mls-s').textContent='Save Changes';renderSecList();openMod('mls');}
 function deleteSubjEl(el){var id=el.dataset.sid;var s=null;for(var i=0;i<db.subjects.length;i++){if(db.subjects[i].id===id){s=db.subjects[i];break;}}if(!s)return;confDel('Delete "'+s.name+'"?','All '+s.lessons.length+' lessons will be permanently removed.',function(){db.subjects=db.subjects.filter(function(x){return x.id!==id;});wk.checklist=wk.checklist.filter(function(c){return db.subjects.some(function(s){return s.id===c.subjId;});});sv();svw();goBack();showToast('Subject deleted');});}
@@ -1660,6 +1767,7 @@ function setLsnFilter(f){lsnFilter=f;renderSubj();}
 function togBulk(){bulkMode=!bulkMode;bulkSel={};renderSubj();}
 function togBulkSel(id,e){if(e)e.stopPropagation();bulkSel[id]=!bulkSel[id];renderSubj();}
 function selAll(){var s=null;for(var i=0;i<db.subjects.length;i++){if(db.subjects[i].id===curSubj){s=db.subjects[i];break;}}if(!s)return;var filtered=lsnFilter==='all'?s.lessons:s.lessons.filter(function(l){return(l.status||'ns')===lsnFilter;});var allSel=filtered.every(function(l){return bulkSel[l.id];});filtered.forEach(function(l){bulkSel[l.id]=!allSel;});renderSubj();}
+function bulkDelete(){var s=null;for(var i=0;i<db.subjects.length;i++){if(db.subjects[i].id===curSubj){s=db.subjects[i];break;}}if(!s)return;var ids=Object.keys(bulkSel).filter(function(k){return bulkSel[k];});if(!ids.length)return;confDel('Delete '+ids.length+' lesson'+(ids.length!==1?'s':'')+'?','This cannot be undone.',function(){s.lessons=s.lessons.filter(function(l){return ids.indexOf(l.id)<0;});wk.checklist=wk.checklist.filter(function(c){return ids.indexOf(c.lessonId)<0;});sv();svw();bulkMode=false;bulkSel={};renderSubj();showToast(ids.length+' lessons deleted');});}
 function bulkSetSt(st){var s=null;for(var i=0;i<db.subjects.length;i++){if(db.subjects[i].id===curSubj){s=db.subjects[i];break;}}if(!s)return;var ids=Object.keys(bulkSel).filter(function(k){return bulkSel[k];});if(!ids.length)return;s.lessons.forEach(function(l){if(ids.indexOf(l.id)>=0){l.status=st;if(st!=='ns')l.lastStudied=Date.now();}});sv();bulkMode=false;bulkSel={};renderSubj();showToast(ids.length+' lessons → '+SL[st]);}
 
 function clrLsrch(){var i=document.getElementById('lsrch');if(i){i.value='';filtLsn('');}}
@@ -1685,14 +1793,47 @@ function initDrag(){
   });
 }
 function swapLsn(a,b){var s=null;for(var i=0;i<db.subjects.length;i++){if(db.subjects[i].id===curSubj){s=db.subjects[i];break;}}if(!s)return;var ia=s.lessons.findIndex(function(l){return l.id===a;}),ib=s.lessons.findIndex(function(l){return l.id===b;});if(ia<0||ib<0)return;var tmp=s.lessons[ia];s.lessons[ia]=s.lessons[ib];s.lessons[ib]=tmp;sv();renderSubj();}
+var subjReorder=false;
+function toggleSubjReorder(){
+  subjReorder=!subjReorder;
+  renderDash();
+  if(subjReorder)setTimeout(initSubjDrag,30);
+}
+function initSubjDrag(){
+  document.querySelectorAll('.sjc[data-sid]').forEach(function(card){
+    var h=card.querySelector('.sjc-dh');if(!h)return;
+    h.addEventListener('mousedown',function(e){
+      e.preventDefault();dragSrc=card.dataset.sid;card.classList.add('dragging');
+      function mv(ev){var t=Array.from(document.elementsFromPoint(ev.clientX,ev.clientY)).find(function(el){return el.classList.contains('sjc')&&el!==card;});document.querySelectorAll('.sjc').forEach(function(c){c.classList.remove('drag-over');});if(t)t.classList.add('drag-over');}
+      function up(ev){card.classList.remove('dragging');document.querySelectorAll('.sjc').forEach(function(c){c.classList.remove('drag-over');});var t=Array.from(document.elementsFromPoint(ev.clientX,ev.clientY)).find(function(el){return el.classList.contains('sjc')&&el.dataset.sid&&el.dataset.sid!==dragSrc;});if(t)swapSubj(dragSrc,t.dataset.sid);dragSrc=null;document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);}
+      document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);
+    });
+    h.addEventListener('touchstart',function(e){
+      e.preventDefault();dragSrc=card.dataset.sid;card.classList.add('dragging');
+      function mv(ev){var pt=ev.touches[0];var t=Array.from(document.elementsFromPoint(pt.clientX,pt.clientY)).find(function(el){return el.classList.contains('sjc')&&el!==card;});document.querySelectorAll('.sjc').forEach(function(c){c.classList.remove('drag-over');});if(t)t.classList.add('drag-over');}
+      function end(ev){card.classList.remove('dragging');document.querySelectorAll('.sjc').forEach(function(c){c.classList.remove('drag-over');});var pt=ev.changedTouches[0];var t=Array.from(document.elementsFromPoint(pt.clientX,pt.clientY)).find(function(el){return el.classList.contains('sjc')&&el.dataset.sid&&el.dataset.sid!==dragSrc;});if(t)swapSubj(dragSrc,t.dataset.sid);dragSrc=null;h.removeEventListener('touchmove',mv);h.removeEventListener('touchend',end);}
+      h.addEventListener('touchmove',mv,{passive:false});h.addEventListener('touchend',end);
+    },{passive:false});
+  });
+}
+function swapSubj(a,b){var ia=db.subjects.findIndex(function(s){return s.id===a;}),ib=db.subjects.findIndex(function(s){return s.id===b;});if(ia<0||ib<0)return;var tmp=db.subjects[ia];db.subjects[ia]=db.subjects[ib];db.subjects[ib]=tmp;sv();renderDash();if(subjReorder)setTimeout(initSubjDrag,30);}
 
-/* ADD SUBJECT */
+var activeCat=Object.keys(EMOJI_CATS)[0];
 function openAddSubj(){
-  var p=document.getElementById('epick');var h='';
-  EMOJIS.forEach(function(e,i){h+='<div class="eo'+(i===0?' sel':'')+'" data-e="'+e+'" onclick="pickEmoji(this)">'+e+'</div>';});
-  p.innerHTML=h;selEmoji=EMOJIS[0];
+  var p=document.getElementById('epick');
+  renderEmojiPicker(p,activeCat);
+  selEmoji=EMOJI_CATS[activeCat][0];
   document.getElementById('sji').value='';document.getElementById('msj-t').textContent='Add Subject';document.getElementById('msj-s').textContent='Add Subject';
   openMod('msj');setTimeout(function(){document.getElementById('sji').focus();},300);
+}
+function renderEmojiPicker(p,cat){
+  activeCat=cat;
+  var tabH='<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px">';
+  Object.keys(EMOJI_CATS).forEach(function(c){tabH+='<button onclick="renderEmojiPicker(document.getElementById(\'epick\'),\''+c+'\')" style="font-size:11px;font-weight:500;padding:4px 10px;border-radius:99px;border:1px solid '+(c===cat?'var(--md-primary)':'var(--md-outline-variant)')+';background:'+(c===cat?'var(--md-primary-container)':'transparent')+';color:'+(c===cat?'var(--md-primary)':'var(--tx3)')+';cursor:pointer;font-family:var(--fn)">'+c+'</button>';});
+  tabH+='</div>';
+  var h='';
+  EMOJI_CATS[cat].forEach(function(e,i){h+='<div class="eo'+(i===0&&!selEmoji||e===selEmoji?' sel':'')+'" data-e="'+e+'" onclick="pickEmoji(this)">'+e+'</div>';});
+  p.innerHTML=tabH+'<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px">'+h+'</div>';
 }
 function pickEmoji(el){document.querySelectorAll('.eo').forEach(function(e){e.classList.remove('sel');});el.classList.add('sel');selEmoji=el.dataset.e;}
 document.getElementById('msj-s').addEventListener('click',function(){var n=document.getElementById('sji').value.trim();if(!n){shake('sji');return;}db.subjects.push({id:uid(),name:n,emoji:selEmoji,lessons:[]});sv();localStorage.removeItem('alt_ob_seen');localStorage.removeItem('alt_ob_done');localStorage.removeItem('alt_ob_step');closeMod('msj');renderDash();showToast(n+' added');});
@@ -1712,7 +1853,9 @@ document.getElementById('mls-s').addEventListener('click',function(){
   if(!s)return;
   if(editLsnId){var l=s.lessons.find(function(x){return x.id===editLsnId;});if(l){l.name=n;l.notes=notes;l.link=link;l.sections=pendSec.slice();}}
   else{s.lessons.push({id:uid(),name:n,notes:notes,link:link,status:'ns',sections:pendSec.slice(),lastStudied:null});}
+  var savedId=editLsnId;
   sv();closeMod('mls');renderSubj();showToast(editLsnId?'Lesson updated':n+' added');editLsnId=null;
+  if(savedId)setTimeout(function(){var el=document.getElementById('lc-'+savedId);if(el)el.classList.add('just-saved');},80);
 });
 
 /* WEEKLY GOAL */
@@ -1735,7 +1878,7 @@ function renderWeek(){
       +'<span class="ci-tag" style="background:'+bg+';color:'+col+';border:1px solid '+bd+'">'+SL[st]+'</span>'
       +'<button class="ci-rm" data-ci="'+i+'" onclick="rmChkEl(this,event)" title="Remove">×</button></div>';
   });
-  if(!wk.checklist.length)cl='<div style="text-align:center;padding:20px;font-size:13px;color:var(--tx3)">No lessons added. Tap + to add.</div>';
+  if(!wk.checklist.length)cl='<div style="text-align:center;padding:28px 16px"><div style="font-size:32px;margin-bottom:10px">📋</div><div style="font-size:14px;font-weight:500;color:var(--tx2);margin-bottom:6px">No lessons added yet</div><div style="font-size:13px;color:var(--tx3);margin-bottom:16px;line-height:1.5">Add lessons from your subjects to track them this week.</div><button class="bp" style="margin:0;font-size:13px;padding:9px 20px" onclick="openAddChk()">+ Add Lessons</button></div>';
   document.getElementById('v-week').innerHTML=
     '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px"><div><h2 style="font-size:20px;font-weight:600;letter-spacing:-.3px">Weekly Goal</h2><p style="font-size:13px;color:var(--tx3);margin-top:3px">'+(wk.label||'This week')+'</p></div><button class="shb" onclick="openMod(\'mwg\')">Edit</button></div>'
     +'<div class="gc hg wgc"><div class="wg-top"><div class="wg-rw">'
@@ -1750,7 +1893,16 @@ function renderWeek(){
 }
 function histHtml(){
   if(!db.weeklyHistory.length)return'<div class="sh" style="margin-top:4px"><span class="shl">History</span></div><div style="font-size:12px;color:var(--tx3);padding:10px 0">No history yet — archive a week to see it here.</div>';
-  var h='<div class="sh" style="margin-top:4px"><span class="shl">History</span></div><div class="hgrid">';
+  var trend='';
+  if(db.weeklyHistory.length>=2){
+    var last=db.weeklyHistory[db.weeklyHistory.length-1];
+    var prev=db.weeklyHistory[db.weeklyHistory.length-2];
+    var diff=last.done-prev.done;
+    if(diff>0)trend='<span style="font-size:11px;font-weight:600;color:var(--dn-t);background:var(--dn-bg);border:1px solid var(--dn-bd);padding:2px 8px;border-radius:99px;margin-left:8px">↑ '+diff+' vs last week</span>';
+    else if(diff<0)trend='<span style="font-size:11px;font-weight:600;color:var(--rv-t);background:var(--rv-bg);border:1px solid var(--rv-bd);padding:2px 8px;border-radius:99px;margin-left:8px">↓ '+Math.abs(diff)+' vs last week</span>';
+    else trend='<span style="font-size:11px;color:var(--tx3);padding:2px 8px;border-radius:99px;margin-left:8px">same as last week</span>';
+  }
+  var h='<div class="sh" style="margin-top:4px"><span class="shl">History</span>'+trend+'</div><div class="hgrid">';
   db.weeklyHistory.slice(-8).reverse().forEach(function(x){var p=x.goal?Math.min(100,Math.round(x.done/x.goal*100)):0;var col=p>=80?'var(--dn-t)':p>=50?'var(--wk-t)':'var(--rv-t)';h+='<div class="gc hc"><div class="hw">'+esc(x.label||'Week')+'</div><div class="hs" style="color:'+col+'">'+x.done+'</div><div class="hg2">/ '+x.goal+'</div><div class="hbr"><div class="hbf" style="width:'+p+'%"></div></div></div>';});
   return h+'</div>';
 }
@@ -1843,14 +1995,14 @@ function openStudyCtx(){
   if(!db.subjects.length){h='<p style="font-size:13px;color:var(--tx3);padding:16px 0">No subjects yet. Add subjects from the Home tab.</p>';}
   else{
     db.subjects.forEach(function(s){
-      h+='<button onclick="pomoSj=\''+s.id+'\';pomoLs=null;showLsnPick(\''+s.id+'\');" style="width:100%;display:flex;align-items:center;gap:12px;background:'+(pomoSj===s.id?'var(--md-secondary-container)':'var(--md-surface-container)')+';border:none;border-radius:var(--rm);padding:13px 16px;margin-bottom:8px;cursor:pointer;font-family:var(--fn);text-align:left;transition:background var(--tr)">'
+      h+='<button onclick="pomoSj=\''+s.id+'\';pomoLs=null;localStorage.setItem(\'alt_pomo_sj\',\''+s.id+'\');localStorage.removeItem(\'alt_pomo_ls\');showLsnPick(\''+s.id+'\');" style="width:100%;display:flex;align-items:center;gap:12px;background:'+(pomoSj===s.id?'var(--md-secondary-container)':'var(--md-surface-container)')+';border:none;border-radius:var(--rm);padding:13px 16px;margin-bottom:8px;cursor:pointer;font-family:var(--fn);text-align:left;transition:background var(--tr)">'
       +'<span style="font-size:20px">'+esc(s.emoji||'📚')+'</span>'
       +'<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500;color:var(--tx)">'+esc(s.name)+'</div><div style="font-size:12px;color:var(--tx3)">'+s.lessons.length+' lesson'+(s.lessons.length!==1?'s':'')+'</div></div>'
       +(pomoSj===s.id?'<span style="color:var(--md-primary);font-size:16px">✓</span>':'')
       +'</button>';
     });
   }
-  h+='<button onclick="pomoSj=null;pomoLs=null;closeMod(\'mpick\');renderPomo();" style="width:100%;background:none;border:1px solid var(--md-outline-variant);border-radius:var(--rm);padding:11px 16px;cursor:pointer;font-family:var(--fn);font-size:13px;color:var(--tx3);margin-top:4px">Clear selection</button>';
+  h+='<button onclick="pomoSj=null;pomoLs=null;localStorage.removeItem(\'alt_pomo_sj\');localStorage.removeItem(\'alt_pomo_ls\');closeMod(\'mpick\');renderPomo();" style="width:100%;background:none;border:1px solid var(--md-outline-variant);border-radius:var(--rm);padding:11px 16px;cursor:pointer;font-family:var(--fn);font-size:13px;color:var(--tx3);margin-top:4px">Clear selection</button>';
   document.getElementById('mpick-body').innerHTML=h;
   openMod('mpick');
 }
@@ -1864,7 +2016,7 @@ function showLsnPick(sjId){
   if(!s.lessons.length){h+='<p style="font-size:13px;color:var(--tx3);padding:8px 0">No lessons in this subject yet.</p>';}
   else{
     s.lessons.forEach(function(l){
-      h+='<button onclick="pomoLs=\''+l.id+'\';closeMod(\'mpick\');renderPomo();" style="width:100%;display:flex;align-items:center;gap:12px;background:'+(pomoLs===l.id?'var(--md-secondary-container)':'var(--md-surface-container)')+';border:none;border-radius:var(--rm);padding:13px 16px;margin-bottom:8px;cursor:pointer;font-family:var(--fn);text-align:left;transition:background var(--tr)">'
+      h+='<button onclick="pomoLs=\''+l.id+'\';localStorage.setItem(\'alt_pomo_ls\',\''+l.id+'\');closeMod(\'mpick\');renderPomo();" style="width:100%;display:flex;align-items:center;gap:12px;background:'+(pomoLs===l.id?'var(--md-secondary-container)':'var(--md-surface-container)')+';border:none;border-radius:var(--rm);padding:13px 16px;margin-bottom:8px;cursor:pointer;font-family:var(--fn);text-align:left;transition:background var(--tr)">'
       +'<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500;color:var(--tx)">'+esc(l.name)+'</div><div style="font-size:12px;color:var(--tx3)">'+(l.status?SL[l.status]||'':'')+'</div></div>'
       +(pomoLs===l.id?'<span style="color:var(--md-primary);font-size:16px">✓</span>':'')
       +'</button>';
@@ -1933,6 +2085,8 @@ function pomoComplete(){
   db.pomoLog.push({ts:Date.now(),mins:dur,subjId:pomoSj,lessonId:pomoLs,label:lbl,mode:pomoMode});sv();
   playSnd(ps.sound,pomoMode==='focus');
   if('Notification' in window&&Notification.permission==='granted')new Notification('AL Study Tracker ✦',{body:pomoMode==='focus'?dur+'m session complete!':'Break over — ready to focus?'});
+  /* highlight pomo nav icon if on another tab */
+  if(curView!=='pomo'){var nb=document.getElementById('nb-pomo');if(nb){nb.style.color='#66D490';setTimeout(function(){nb.style.color='';},3000);}}
   if(pomoMode==='focus'){
     var todaySess=db.pomoLog.filter(function(p){var d=new Date(p.ts),n=new Date();return p.mode==='focus'&&d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()&&d.getDate()===n.getDate();});
     var totalMins=0;db.pomoLog.forEach(function(p){totalMins+=p.mins;});
