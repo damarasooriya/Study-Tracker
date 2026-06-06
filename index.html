@@ -949,7 +949,7 @@ html.lt .streak-chip.has-streak{border-color:rgba(180,83,9,.25);background:rgba(
   <div class="ff"><label class="fl">Subject Name</label><input type="text" class="fi" id="sji" placeholder="e.g. Physics" autocomplete="off"></div>
   <div class="ff"><label class="fl">Icon</label><div class="er" id="epick"></div></div>
   <button class="bp" id="msj-s">Add Subject</button>
-  <button class="bs" onclick="closeMod('msj')">Cancel</button>
+  <button class="bs" onclick="editSubjId=null;closeMod('msj')">Cancel</button>
 </div></div>
 
 <div class="mo" id="mls"><div class="md">
@@ -1201,7 +1201,7 @@ var tipIdx=Math.floor(Math.random()*TIPS.length);
 var db={subjects:[],pomoLog:[],weeklyHistory:[],feedbacks:[],examDate:null};
 var wk={goal:0,label:'',checklist:[]};
 var ps={focusMins:25,shortMins:5,longMins:15,sound:'chime'};
-var curSubj=null,curView='dash',openLsn=null,editLsnId=null,pendSec=[],selEmoji=EMOJIS[0];
+var curSubj=null,curView='dash',openLsn=null,editLsnId=null,editSubjId=null,pendSec=[],selEmoji=EMOJIS[0];
 var reorder=false,delCb=null,fbTagVal='Bug Report';
 var pomoTimer=null,pomoSecs=0,pomoRun=false,pomoMode='focus',pomoSj=null,pomoLs=null;
 var examCountdownTimer=null;
@@ -1310,7 +1310,7 @@ function updHdr(mode){
     if(moon&&sun){moon.style.display=th==='light'?'none':'';sun.style.display=th==='light'?'':'none';}
   } else {
     L.innerHTML='<button class="bkbtn" onclick="goBack()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:15px;height:15px"><polyline points="10,3 5,8 10,13"/></svg>Back</button>';
-    R.innerHTML='<button class="dsb" data-sid="'+curSubj+'" onclick="deleteSubjEl(this)">Delete subject</button>';
+    R.innerHTML='<div style="display:flex;gap:8px;align-items:center"><button style="background:transparent;border:1px solid rgba(207,188,255,.35);font-size:12px;font-weight:500;color:var(--md-primary);cursor:pointer;font-family:var(--fn);padding:5px 12px;border-radius:var(--rfull);transition:all var(--tr)" data-sid="'+curSubj+'" onclick="editSubjEl(this)" onmouseover="this.style.background=\'rgba(207,188,255,.08)\'" onmouseout="this.style.background=\'transparent\'">Edit</button><button class="dsb" data-sid="'+curSubj+'" onclick="deleteSubjEl(this)">Delete</button></div>';
   }
 }
 
@@ -1575,8 +1575,6 @@ var ring='<div class="sjc-ring-wrap"><div class="sjc-ring"><svg width="42" heigh
     +gsH
     +focusSection
     +progressCard
-    +continueCard
-    +attCard
     +'<div class="dbs"><div class="sh"><span class="shl">Subjects</span>'+(db.subjects.length>1?'<button class="shb" id="sjReorderBtn" onclick="toggleSubjReorder()">⠿ Reorder</button>':'')+'</div>'+sjH+'</div>';
 
   var wd=document.getElementById('wkdot');
@@ -1828,6 +1826,23 @@ function initSubjDrag(){
 function swapSubj(a,b){var ia=db.subjects.findIndex(function(s){return s.id===a;}),ib=db.subjects.findIndex(function(s){return s.id===b;});if(ia<0||ib<0)return;var tmp=db.subjects[ia];db.subjects[ia]=db.subjects[ib];db.subjects[ib]=tmp;sv();renderDash();if(subjReorder)setTimeout(initSubjDrag,30);}
 
 var activeCat=Object.keys(EMOJI_CATS)[0];
+function editSubjEl(el){
+  var id=el.dataset.sid;
+  var s=db.subjects.find(function(x){return x.id===id;});
+  if(!s)return;
+  editSubjId=id;
+  var p=document.getElementById('epick');
+  var cat=Object.keys(EMOJI_CATS).find(function(c){return EMOJI_CATS[c].indexOf(s.emoji)>=0;})||Object.keys(EMOJI_CATS)[0];
+  renderEmojiPicker(p,cat);
+  selEmoji=s.emoji||EMOJIS[0];
+  /* highlight selected emoji */
+  setTimeout(function(){document.querySelectorAll('.eo').forEach(function(e){e.classList.toggle('sel',e.dataset.e===selEmoji);});},30);
+  document.getElementById('sji').value=s.name;
+  document.getElementById('msj-t').textContent='Edit Subject';
+  document.getElementById('msj-s').textContent='Save Changes';
+  openMod('msj');
+  setTimeout(function(){document.getElementById('sji').focus();},300);
+}
 function openAddSubj(){
   var p=document.getElementById('epick');
   renderEmojiPicker(p,activeCat);
@@ -1845,7 +1860,22 @@ function renderEmojiPicker(p,cat){
   p.innerHTML=tabH+'<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px">'+h+'</div>';
 }
 function pickEmoji(el){document.querySelectorAll('.eo').forEach(function(e){e.classList.remove('sel');});el.classList.add('sel');selEmoji=el.dataset.e;}
-document.getElementById('msj-s').addEventListener('click',function(){var n=document.getElementById('sji').value.trim();if(!n){shake('sji');return;}db.subjects.push({id:uid(),name:n,emoji:selEmoji,lessons:[]});sv();localStorage.removeItem('alt_ob_seen');localStorage.removeItem('alt_ob_done');localStorage.removeItem('alt_ob_step');closeMod('msj');renderDash();showToast(n+' added');});
+document.getElementById('msj-s').addEventListener('click',function(){
+  var n=document.getElementById('sji').value.trim();
+  if(!n){shake('sji');return;}
+  if(editSubjId){
+    var s=db.subjects.find(function(x){return x.id===editSubjId;});
+    if(s){s.name=n;s.emoji=selEmoji;}
+    editSubjId=null;sv();closeMod('msj');
+    if(curSubj){updHdr('subj');renderSubj();}else{renderDash();}
+    showToast(n+' updated');
+  }else{
+    db.subjects.push({id:uid(),name:n,emoji:selEmoji,lessons:[]});
+    sv();localStorage.removeItem('alt_ob_seen');localStorage.removeItem('alt_ob_done');
+    localStorage.removeItem('alt_ob_step');localStorage.removeItem('alt_ob_ver');
+    closeMod('msj');renderDash();showToast(n+' added');
+  }
+});
 document.addEventListener('keydown',function(e){
   if(e.key===' '&&curView==='pomo'&&document.activeElement.tagName!=='INPUT'&&document.activeElement.tagName!=='TEXTAREA'&&document.activeElement.tagName!=='SELECT'){
     e.preventDefault();togPomo();
