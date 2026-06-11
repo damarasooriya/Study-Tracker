@@ -677,15 +677,14 @@ html.lt .dash-stat{background:var(--md-surface-container-lowest)}
 .greet-row h1{font-size:22px;font-weight:700;letter-spacing:-.4px;line-height:1.2}
 .greet-row p{font-size:13px;color:var(--tx3);margin-top:2px}
 .streak-chip{display:flex;align-items:center;gap:8px;background:var(--g2);border:1px solid var(--gb);border-radius:var(--rfull);padding:6px 14px;flex-shrink:0;transition:all var(--tr)}
-.streak-chip.has-streak{border-color:rgba(255,216,106,.3);background:rgba(255,216,106,.08);box-shadow:0 0 14px rgba(255,216,106,.08)}
-html.lt .streak-chip.has-streak{border-color:rgba(180,83,9,.25);background:rgba(180,83,9,.06)}
+.streak-chip.has-streak{border-color:rgba(167,139,250,.4);background:rgba(167,139,250,.08);box-shadow:0 0 14px rgba(167,139,250,.12)}
+html.lt .streak-chip.has-streak{border-color:rgba(124,58,237,.3);background:rgba(124,58,237,.06);box-shadow:0 0 10px rgba(124,58,237,.08)}
 .streak-chip-days{display:flex;gap:3px;align-items:center}
 .streak-chip-sday{width:7px;height:7px;border-radius:50%;background:var(--gb2);transition:background .3s,transform .3s}
-.streak-chip-sday.on{background:var(--dn-t);transform:scale(1.2)}
+.streak-chip-sday.on{background:var(--acc);transform:scale(1.2)}
 .streak-chip-val{font-size:12px;font-weight:600;color:var(--tx2);white-space:nowrap}
-.streak-chip.has-streak .streak-chip-val{color:var(--streak-color)}
-@keyframes flamepulse{0%,100%{text-shadow:0 0 4px rgba(255,216,106,.4)}50%{text-shadow:0 0 12px rgba(255,216,106,.9)}}
-.streak-flame{display:inline-block;animation:flamepulse 2s ease-in-out infinite}
+.streak-chip.has-streak .streak-chip-val{color:var(--acc)}
+.streak-star{display:inline-block;vertical-align:-2px}
 .sjc-ls{font-size:11px;color:var(--tx3);margin-top:1px}
 
 /* ── HISTORY CARDS ─── */
@@ -1242,7 +1241,8 @@ function renderDash(){
   var studyDays=getStudyDays();var todayKey=(function(){var d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();})();
   var studiedToday=!!studyDays[todayKey];
   var chipDots=last7.map(function(d){return'<span class="streak-chip-sday'+(d.on?' on':'')+'"></span>';}).join('');
-  var chipVal=streak>0?'<span class="streak-flame">🔥</span> '+streak+(studiedToday?' · ✓':''):( studiedToday?'✓ today':'no streak');
+  var starSvg='<span class="streak-star"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" style="display:inline-block"><path d="M6.5 1l1.5 3.2L11.5 5l-2.3 2.2.5 3.2L6.5 9l-3.2 1.4.5-3.2L1.5 5l3.5-.8L6.5 1z" fill="var(--acc)"/></svg></span>';
+  var chipVal=streak>0?starSvg+' '+streak+(studiedToday?' · ✓':''):(studiedToday?'✓ today':'no streak');
   var chipClass='streak-chip'+(streak>0?' has-streak':'');
   var greetH='<div class="greet-row">'
     +'<div><h1>'+greet()+' ✦</h1><p>'+db.subjects.length+' subject'+(db.subjects.length!==1?'s':'')+' · '+total+' lesson'+(total!==1?'s':'')+'</p></div>'
